@@ -26,7 +26,7 @@
   .logo-img{filter:invert(1);}
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow-x:hidden}
 .ic{width:1em;height:1em;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.12em;flex:0 0 auto}
 a{color:inherit;text-decoration:none;cursor:pointer}
 button{font-family:var(--font-body)}
@@ -34,8 +34,10 @@ input[type=number]{-moz-appearance:textfield;appearance:textfield}
 input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* topbar */
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 22px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:20;backdrop-filter:blur(12px)}
-.brand{display:flex;align-items:center;gap:10px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 22px;border-bottom:1px solid var(--border);background:var(--bg);position:sticky;top:0;z-index:20;backdrop-filter:blur(12px)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adminlink{flex:0 0 auto}
 .logo-img{height:32px;width:auto;display:block}
 .sep{width:1px;height:18px;background:var(--border)}
 .sub{font-family:var(--font-display);font-weight:300;font-size:.9rem;color:var(--text-2)}
@@ -101,7 +103,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .adjcount{margin-top:10px;font-size:11px;color:var(--text-3)}
 
 /* inputs */
-.inp{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-body);font-size:14px;font-weight:300;line-height:1.7;resize:vertical;margin-top:14px}
+.inp{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-family:var(--font-body);font-size:16px;font-weight:300;line-height:1.7;resize:vertical;margin-top:14px;overflow-wrap:break-word}
 .inp:focus{outline:none;border-color:rgba(10,87,255,.5);box-shadow:0 0 0 3px rgba(0,89,255,.10)}
 .inp::placeholder{color:var(--text-3)}
 textarea.inp{min-height:84px}
@@ -219,14 +221,32 @@ textarea.inp{min-height:84px}
 .kv{padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface)}
 .kv:last-child{border-bottom:none}
 .kv .k{font-size:11px;font-weight:500;color:var(--text-3);margin-bottom:6px;display:flex;align-items:center;gap:8px;letter-spacing:.02em}
-.kv .v{font-size:15px;color:var(--text);line-height:1.7;white-space:pre-line;font-weight:300}
+.kv .v{font-size:15px;color:var(--text);line-height:1.7;white-space:pre-line;font-weight:300;overflow-wrap:break-word;word-break:break-word}
 .kv.gold{background:rgba(10,87,255,.05);border-inline-start:3px solid var(--accent)}
 .kv.gold .k{color:var(--cool)}
 .gbadge{font-size:10px;color:var(--cool);background:rgba(10,87,255,.14);border:1px solid rgba(10,87,255,.28);padding:1px 7px;border-radius:999px}
 
 /* a11y */
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-@media(max-width:560px){.cardbody{padding:18px 15px 20px}.q{font-size:1.1rem}.land-title{font-size:1.35rem}}
+@media(max-width:560px){
+  .cardbody{padding:18px 15px 20px}
+  .q{font-size:1.1rem}
+  .land-title{font-size:1.35rem}
+  .topbar{padding:11px 15px}
+  .adminlink{padding:6px 11px}
+  .sub{font-size:.82rem}
+  .qmark{width:26px;height:26px}
+  .nav{gap:8px}
+  .cta{padding:12px 18px}
+  .ghost{padding:11px 14px}
+  .kv,.group-h{padding-inline:14px}
+  .subcard{padding:14px 14px;gap:10px}
+}
+@media(max-width:380px){
+  .sep,.sub{display:none}
+  .stat{min-width:0}
+  .cta span,.ghost span{font-size:13px}
+}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
