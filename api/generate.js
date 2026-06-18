@@ -1,17 +1,28 @@
-export const config = { runtime: 'edge' };
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للبراندنج. ولّد أسئلة استبيان مخصصة لعميل يريد إعادة بناء هويته التجارية.
+  const { brandName, activity, description, lang } = req.body;
 
-القواعد الصارمة:
-- أعد 3 مراحل فقط (لماذا الآن، الجمهور والسوق، الفجوة) — لا أكثر
-- كل مرحلة تحتوي 3 أسئلة فقط — المجموع 9 أسئلة
-- الأسئلة بالفصحى، مخصصة لمجال العميل تماماً
-- الأمثلة من نفس مجال العميل
-- أنواع الحقول: multi أو scale أو textarea فقط
-- للـ multi: options مصفوفة من 4-5 عناصر [{ar, en}] مع other: true
-- للـ scale: options مصفوفة من 4 عناصر [{ar, en}]
+  if (!brandName || !description) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
-أعد JSON فقط، بدون أي نص خارجه:
+  const isAr = lang !== 'en';
+
+  const SYSTEM_PROMPT = `You are a Creative Director at Rabeez branding agency. Generate customised brand discovery questions for a client seeking a rebrand.
+
+Rules:
+- Generate exactly 3 stages, each with exactly 3 questions (9 questions total)
+- All Arabic text must be formal Arabic (فصحى), singular form
+- All examples and options must be specific to the client's industry
+- Available field types: multi, scale, textarea
+- For multi: options array of 4-5 items [{ar, en}], always add other:true
+- For scale: options array of 4 items [{ar, en}]
+- For textarea: no options needed
+
+Return ONLY valid JSON, no extra text:
 {
   "stages": [
     {
@@ -20,14 +31,14 @@ const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للب�
       "questions": [
         {
           "id": "s3_q1",
-          "q": {"ar": "نص السؤال", "en": "Question text"},
+          "q": {"ar": "Arabic question text", "en": "English question text"},
           "type": "multi",
           "options": [{"ar": "خيار", "en": "option"}],
           "other": true,
           "otherLabel": {"ar": "سبب آخر", "en": "Other reason"},
           "help": {
-            "why": {"ar": "لماذا السؤال مهم", "en": "Why this matters"},
-            "ex": {"ar": "مثال من مجال العميل", "en": "Client-specific example"}
+            "why": {"ar": "Why this question matters", "en": "Why this question matters"},
+            "ex": {"ar": "Industry-specific example", "en": "Industry-specific example"}
           },
           "golden": true,
           "required": false
@@ -37,101 +48,44 @@ const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للب�
   ]
 }`;
 
-export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
-  }
+  const userMsg = `Client info:
+- Brand name: ${brandName}
+- Industry: ${activity || 'Not specified'}
+- Description: ${description}
+- Preferred language: ${isAr ? 'Arabic' : 'English'}
 
-  const { brandName, activity, description, lang } = await req.json();
+Generate 3 stages × 3 questions tailored to this client's industry. Stage titles: (1) Why now?, (2) Audience & market, (3) The strategic gap.`;
 
-  if (!brandName || !description) {
-    return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
-  }
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2500,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
 
-  const userMessage = `العميل:
-- الاسم: ${brandName}
-- المجال: ${activity || 'غير محدد'}
-- الوصف: ${description}
-- اللغة: ${lang === 'en' ? 'English' : 'العربية'}
-
-ولّد 3 مراحل، كل مرحلة 3 أسئلة مخصصة لهذا المجال.`;
-
-  const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
-      stream: true,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }]
-    })
-  });
-
-  if (!anthropicRes.ok) {
-    const err = await anthropicRes.text();
-    return new Response(JSON.stringify({ error: 'Anthropic API error', detail: err }), { status: 500 });
-  }
-
-  const { readable, writable } = new TransformStream();
-  const writer = writable.getWriter();
-  const encoder = new TextEncoder();
-
-  (async () => {
-    const reader = anthropicRes.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let fullText = '';
-    const TARGET_CHARS = 1800;
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6).trim();
-          try {
-            const event = JSON.parse(data);
-
-            if (event.type === 'content_block_delta' && event.delta?.text) {
-              fullText += event.delta.text;
-              const pct = Math.min(Math.round((fullText.length / TARGET_CHARS) * 88), 88);
-              await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'progress', pct })}\n\n`));
-            }
-
-            if (event.type === 'message_stop') {
-              const jsonMatch = fullText.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'done', data: parsed })}\n\n`));
-              } else {
-                await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Invalid JSON' })}\n\n`));
-              }
-            }
-          } catch (e) {}
-        }
-      }
-    } catch (err) {
-      await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`));
-    } finally {
-      await writer.close();
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(500).json({ error: 'Anthropic error', detail: err });
     }
-  })();
 
-  return new Response(readable, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-    }
-  });
+    const data = await response.json();
+    const raw = data.content[0].text;
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return res.status(500).json({ error: 'No JSON in response', raw });
+
+    const parsed = JSON.parse(match[0]);
+    return res.status(200).json(parsed);
+
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Client Brief — Rabeez v2</title>
+<title>Client Brief — Rabeez</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;500;700&display=swap" rel="stylesheet">
@@ -682,9 +682,8 @@ function mapStages(raw){
     return {
       title: st.title||{ar:"",en:""},
       questions: (st.questions||[]).map(function(q){
-        /* normalise field names from generated output */
-        if(q.question_ar) q.q={ar:q.question_ar,en:q.question_en||q.question_ar};
-        if(q.help_why||q.help_example) q.help={why:{ar:q.help_why||"",en:q.help_why||""},ex:{ar:q.help_example||"",en:q.help_example||""}};
+        if(!q.q && q.question_ar) q.q={ar:q.question_ar,en:q.question_en||q.question_ar};
+        if(!q.q) q.q={ar:"",en:""};
         if(q.options&&q.options.length&&typeof q.options[0]==="string") q.options=q.options.map(function(o){return {ar:o,en:o};});
         if(!q.id) q.id="gen_"+Math.random().toString(36).slice(2);
         if(q.golden) GOLDEN[q.id]=1;
@@ -706,57 +705,38 @@ async function generateStages(){
   var activity=typeof answers.s1_activity==="string"?answers.s1_activity.trim():"";
   var description=typeof answers.s2_desc==="string"?answers.s2_desc.trim():"";
 
-  return new Promise(function(resolve){
-    fetch("/api/generate",{
+  try{
+    // Animate bar while waiting
+    var fakeTimer=setInterval(function(){
+      if(state.genPct<85){state.genPct+=3;updateGenBar(state.genPct);}
+    },400);
+
+    var resp=await fetch("/api/generate",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({brandName:brandName,activity:activity,description:description,lang:L()})
-    }).then(function(resp){
-      if(!resp.ok) throw new Error("API "+resp.status);
-      var reader=resp.body.getReader();
-      var decoder=new TextDecoder();
-      var buffer="";
+    });
 
-      function read(){
-        reader.read().then(function(r){
-          if(r.done){ resolve(); return; }
-          var chunk=decoder.decode(r.value,{stream:true});console.log('[Rabeez] chunk:',JSON.stringify(chunk.slice(0,100)));buffer+=chunk;
-          var lines=buffer.split("\x0a");
-          buffer=lines.pop();
-          lines.forEach(function(line){
-            if(!line.startsWith("data: ")) return;
-            try{
-              var evt=JSON.parse(line.slice(6));
-              if(evt.type==="progress") updateGenBar(evt.pct);
-              if(evt.type==="done"){
-                console.log("[Rabeez] Raw generated data:", JSON.stringify(evt.data));
-                var mapped=mapStages(evt.data);
-                console.log("[Rabeez] Mapped stages:", mapped.length, JSON.stringify(mapped).slice(0,200));
-                if(mapped.length){ DYNAMIC_STAGES=mapped; }
-                else { DYNAMIC_STAGES=null; }
-                resolve();
-              }
-              if(evt.type==="error"){ console.warn("gen error:",evt.message); DYNAMIC_STAGES=null; resolve(); }
-            }catch(e){}
-          });
-          read();
-        }).catch(function(err){ console.warn("stream err:",err); DYNAMIC_STAGES=null; resolve(); });
-      }
-      read();
-    }).catch(function(err){ console.warn("fetch err:",err); DYNAMIC_STAGES=null; resolve(); });
-  });
+    clearInterval(fakeTimer);
+
+    if(!resp.ok) throw new Error("API "+resp.status);
+    var data=await resp.json();
+    var mapped=mapStages(data);
+    if(mapped.length) DYNAMIC_STAGES=mapped;
+    else DYNAMIC_STAGES=null;
+  }catch(err){
+    console.warn("Generation failed, using fallback:",err.message);
+    DYNAMIC_STAGES=null;
+  }
 }
-
 function startGen(){
   state.generating=true;state.genPct=0;render();
-  // Start at 5% immediately to show activity
-  setTimeout(function(){updateGenBar(5);},100);
-  // Stream drives the bar — when done, go to stage 3
+  state.genPct=5; updateGenBar(5);
   generateStages().then(function(){
     updateGenBar(100);
     setTimeout(function(){
       state.generating=false;state.stage=3;saveDraft();render();window.scrollTo(0,0);
-    },400);
+    },300);
   });
 }
 
@@ -786,7 +766,7 @@ app.addEventListener("click",function(e){
   if(act==="lang"){state.lang=t.getAttribute("data-lang");answers={};state.stage=1;state.view="form";clearDraft();render();window.scrollTo(0,0);}
   else if(act==="resume"){loadDraft();state.view="form";render();window.scrollTo(0,0);}
   else if(act==="fresh"){clearDraft();answers={};state.stage=1;render();}
-  else if(act==="next"){console.log('[Rabeez] next clicked, stage=',state.stage);if(state.stage===2){console.log('[Rabeez] calling startGen');startGen();}else{state.stage++;saveDraft();render();window.scrollTo(0,0);}}
+  else if(act==="next"){if(state.stage===2){startGen();}else{state.stage++;saveDraft();render();window.scrollTo(0,0);}}
   else if(act==="prev"){state.stage--;render();window.scrollTo(0,0);}
   else if(act==="opt"){toggleOpt(t.getAttribute("data-q"),t.getAttribute("data-val"));}
   else if(act==="sugg"){var qi=t.getAttribute("data-q"),vi=parseInt(t.getAttribute("data-val"),10);var as=ans(qi);var ix=as.sel.indexOf(vi);if(ix>-1)as.sel.splice(ix,1);else as.sel.push(vi);saveDraft();render();}
