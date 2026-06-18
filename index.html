@@ -101,6 +101,10 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .box .ic{display:none}
 .opt.sel .box{border-color:var(--accent)}
 .opt.sel .box .ic{display:inline}
+.err-msg{font-size:12px;color:#FF5252;margin-top:7px;display:flex;align-items:center;gap:5px}
+.qblock.erred .inp{border-color:#FF5252}
+.opt:focus-visible,.adj:focus-visible,.sopt:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-color:var(--accent)}
+.submit-err{font-size:13px;color:#FF5252;text-align:center;margin-top:12px;padding:10px 16px;background:rgba(255,82,82,.07);border:1px solid rgba(255,82,82,.22);border-radius:999px}
 
 /* scale */
 .scale{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
@@ -303,7 +307,10 @@ var T={
     adj:function(n){return "اخترت "+n+" — الموصى به ٣ إلى ٥";},
     genPct:function(p){return "جارٍ التحليل… "+p+"%";},
     loginTitle:"الدخول للوحة التحكم",loginUser:"اسم المستخدم",loginPass:"كلمة المرور",loginBtn:"دخول",loginErr:"بيانات الدخول غير صحيحة.",
-    logout:"خروج"},
+    logout:"خروج",
+    errRequired:"هذا الحقل مطلوب",
+    timeEst:"يستغرق نحو ١٠ دقائق",
+    privacy:"معلوماتك سرّية وتُستخدم لإعداد دراسة علامتك فقط"},
   en:{appName:"Project Start",tag:"Brand discovery — rebrand track.",
     langPrompt:"Choose the form language",next:"Next",prev:"Back",submit:"Submit",
     eg:"Example:",otherPh:"Type here…",fileHint:"Click to upload",saved:"Saved automatically",add:"+ Add",
@@ -317,7 +324,11 @@ var T={
     adj:function(n){return "You picked "+n+" — recommended 3 to 5";},
     genPct:function(p){return "Analysing… "+p+"%";},
     loginTitle:"Admin login",loginUser:"Username",loginPass:"Password",loginBtn:"Sign in",loginErr:"Invalid credentials.",
-    logout:"Sign out"}
+    logout:"Sign out",
+    errRequired:"This field is required",
+    timeEst:"Takes about 10 minutes",
+    privacy:"Your information is confidential and used solely for brand research",
+    adminLink:"Control Panel"}
 };
 
 /* ── adjectives ─────────────────────────────────────────────────── */
@@ -483,7 +494,8 @@ function totalStages(){return allStages().length;}
 function currentStageData(){return allStages()[state.stage-1];}
 
 /* ── state ─────────────────────────────────────────────────────── */
-var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null};
+var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:""};
+var _lastFocusedStage=0;
 var answers={};
 
 /* ── storage ───────────────────────────────────────────────────── */
@@ -560,14 +572,14 @@ function ctrl(q){
       return '<div class="addrow">'
         +'<div class="phone-code"><input class="inp" data-q="'+id+'" data-field="phone" data-index="'+i+'" data-key="code" value="'+ea(r.code||"")+'" placeholder="+966"></div>'
         +'<div class="phone-num"><input class="inp" data-q="'+id+'" data-field="phone" data-index="'+i+'" data-key="num" value="'+ea(r.num||"")+'" placeholder="'+(L()==="ar"?"رقم الهاتف":"Phone number")+'"></div>'
-        +(i>0?'<button class="delbtn" data-action="delField" data-q="'+id+'" data-index="'+i+'">&times;</button>':'')
+        +(i>0?'<button class="delbtn" data-action="delField" data-q="'+id+'" data-index="'+i+'" aria-label="'+(L()==="ar"?"حذف":"Remove")+'">&times;</button>':'')
       +'</div>';
     }).join("");
     return '<div class="addwrap phone-wrap">'+rows+'</div><button class="addbtn" data-action="addField" data-q="'+id+'" data-ftype="phone">'+T[L()].add+'</button>';
   }
   if(t==="multiadd"){
     var arr=Array.isArray(answers[id])?answers[id]:[""];if(!arr.length)arr=[""];
-    var rows2=arr.map(function(v,i){return '<div class="addrow"><input class="inp" data-q="'+id+'" data-field="multi" data-index="'+i+'" value="'+ea(v)+'" placeholder="'+ph(q)+'">'+(i>0?'<button class="delbtn" data-action="delField" data-q="'+id+'" data-index="'+i+'">&times;</button>':'')+'</div>';}).join("");
+    var rows2=arr.map(function(v,i){return '<div class="addrow"><input class="inp" data-q="'+id+'" data-field="multi" data-index="'+i+'" value="'+ea(v)+'" placeholder="'+ph(q)+'">'+(i>0?'<button class="delbtn" data-action="delField" data-q="'+id+'" data-index="'+i+'" aria-label="'+(L()==="ar"?"حذف":"Remove")+'">&times;</button>':'')+'</div>';}).join("");
     return '<div class="addwrap">'+rows2+'</div><button class="addbtn" data-action="addField" data-q="'+id+'" data-ftype="multi">'+T[L()].add+'</button>';
   }
   if(t==="multipair"){
@@ -577,7 +589,7 @@ function ctrl(q){
       return '<div class="addrow">'
         +'<input class="inp inp-sm" data-q="'+id+'" data-field="pair" data-index="'+i+'" data-key="a" value="'+ea(o&&o.a||"")+'" placeholder="'+ea(pa)+'">'
         +'<input class="inp inp-lg" data-q="'+id+'" data-field="pair" data-index="'+i+'" data-key="b" value="'+ea(o&&o.b||"")+'" placeholder="'+ea(pb)+'">'
-        +(i>0?'<button class="delbtn" data-action="delField" data-q="'+id+'" data-index="'+i+'">&times;</button>':'')
+        +(i>0?'<button class="delbtn" data-action="delField" data-q="'+id+'" data-index="'+i+'" aria-label="'+(L()==="ar"?"حذف":"Remove")+'">&times;</button>':'')
       +'</div>';
     }).join("");
     return '<div class="addwrap">'+rows3+'</div><button class="addbtn" data-action="addField" data-q="'+id+'" data-ftype="pair">'+T[L()].add+'</button>';
@@ -601,19 +613,19 @@ function ctrl(q){
   var otherTxt=q.otherLabel?q.otherLabel[L()]:(L()==="ar"?"أخرى":"Other");
   var html="";
   if(t==="scale"){
-    html='<div class="scale">';
-    q.options.forEach(function(o,i){html+='<div class="sopt'+(a3.sel.indexOf(i)>-1?" sel":"")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'">'+o[L()]+'</div>';});
+    html='<div class="scale" role="radiogroup">';
+    q.options.forEach(function(o,i){var sel=a3.sel.indexOf(i)>-1;html+='<div class="sopt'+(sel?" sel":"")+'" role="radio" tabindex="0" aria-checked="'+(sel?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'">'+o[L()]+'</div>';});
     html+='</div>';
   } else if(q.adj){
-    html='<div class="adjwrap">';
-    q.options.forEach(function(o,i){html+='<div class="adj'+(a3.sel.indexOf(i)>-1?" sel":"")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'">'+o[L()]+'</div>';});
-    if(q.other)html+='<div class="adj'+(a3.sel.indexOf("other")>-1?" sel":"")+'" data-action="opt" data-q="'+id+'" data-val="other">'+otherTxt+'</div>';
+    html='<div class="adjwrap" role="group">';
+    q.options.forEach(function(o,i){var sel=a3.sel.indexOf(i)>-1;html+='<div class="adj'+(sel?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(sel?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'">'+o[L()]+'</div>';});
+    if(q.other){var selO=a3.sel.indexOf("other")>-1;html+='<div class="adj'+(selO?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(selO?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="other">'+otherTxt+'</div>';}
     html+='</div><div class="adjcount">'+T[L()].adj(a3.sel.length)+'</div>';
     if(q.other&&a3.sel.indexOf("other")>-1)html+='<input class="inp" data-q="'+id+'" data-field="extra" value="'+ea(a3.extra||"")+'" placeholder="'+ea(L()==="ar"?"اكتب صفة أخرى…":"Type another word…")+'">';
   } else {
-    html='<div class="opts">';
-    q.options.forEach(function(o,i){html+='<div class="opt'+(a3.sel.indexOf(i)>-1?" sel":"")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'"><span class="box">'+IC.check+'</span><span>'+o[L()]+'</span></div>';});
-    if(q.other)html+='<div class="opt'+(a3.sel.indexOf("other")>-1?" sel":"")+'" data-action="opt" data-q="'+id+'" data-val="other"><span class="box">'+IC.check+'</span><span>'+otherTxt+'</span></div>';
+    html='<div class="opts" role="group">';
+    q.options.forEach(function(o,i){var sel=a3.sel.indexOf(i)>-1;html+='<div class="opt'+(sel?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(sel?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'"><span class="box" aria-hidden="true">'+IC.check+'</span><span>'+o[L()]+'</span></div>';});
+    if(q.other){var selO2=a3.sel.indexOf("other")>-1;html+='<div class="opt'+(selO2?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(selO2?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="other"><span class="box" aria-hidden="true">'+IC.check+'</span><span>'+otherTxt+'</span></div>';}
     html+='</div>';
     if(q.other&&a3.sel.indexOf("other")>-1)html+='<input class="inp" data-q="'+id+'" data-field="extra" value="'+ea(a3.extra||"")+'" placeholder="'+ea(T[L()].otherPh)+'">';
   }
@@ -643,14 +655,14 @@ function topbar(mode){
 function progress(){
   var pct=Math.round((state.stage/totalStages())*100);
   var lbl=L()==="ar"?("المرحلة "+state.stage+" من "+totalStages()):("Stage "+state.stage+" of "+totalStages());
-  return '<div class="progwrap"><div class="prog"><div class="prog-fill" style="width:'+pct+'%"></div></div><span class="progtext">'+lbl+'</span></div>';
+  return '<div class="progwrap"><div class="prog" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100" aria-label="'+lbl+'"><div class="prog-fill" style="width:'+pct+'%"></div></div><span class="progtext" aria-hidden="true">'+lbl+'</span></div>';
 }
 
 /* ── views ─────────────────────────────────────────────────────── */
 function vLanding(){
   var resume="";
   if(hasDraft())resume='<div class="resume-card"><h4>'+T[L()].resumeT+'</h4><p>'+T[L()].resumeB+'</p><div class="row"><button class="cta" data-action="resume"><span>'+T[L()].resume+'</span></button><button class="ghost" data-action="fresh">'+T[L()].fresh+'</button></div></div>';
-  return topbar("form")+'<div class="wrap"><div class="land"><h1 class="land-title">'+T[L()].appName+'</h1><p class="land-tag">'+T[L()].tag+'</p>'+resume+'<p class="land-prompt">'+T[L()].langPrompt+'</p><div class="langrow"><button class="cta" data-action="lang" data-lang="ar">العربية</button><button class="cta ghostcta" data-action="lang" data-lang="en">English</button></div><p class="land-foot">'+T[L()].foot+'</p></div></div>';
+  return topbar("form")+'<div class="wrap"><div class="land"><h1 class="land-title">'+T[L()].appName+'</h1><p class="land-tag">'+T[L()].tag+'</p><p style="font-size:12px;color:var(--text-3);margin:0 0 22px">'+T[L()].timeEst+'</p>'+resume+'<p class="land-prompt">'+T[L()].langPrompt+'</p><div class="langrow"><button class="cta" data-action="lang" data-lang="ar">العربية</button><button class="cta ghostcta" data-action="lang" data-lang="en">English</button></div><p style="font-size:11px;color:var(--text-3);margin-top:22px;line-height:1.7">'+T[L()].privacy+'</p><p class="land-foot">'+T[L()].foot+'</p></div></div>';
 }
 
 function vStage(){
@@ -663,15 +675,19 @@ function vStage(){
     var navL='<div class="nav">'+(state.stage>1?'<button class="ghost" data-action="prev">'+ni("prev")+'<span>'+T[L()].prev+'</span></button>':'<span></span>')+'<span></span></div>';
     return topbar("form")+'<div class="wrap">'+progress()+'<div class="card"><div class="cardbody">'+body+navL+'</div></div></div>';
   }
+  var errs=state.errors||{};
   var qs=st.questions.map(function(q){
-    return '<div class="qblock"><h3 class="q">'+q.q[L()]+(q.required?' <span class="req">*</span>':'')+(q.help?qmark(q):'')+'</h3>'+(q.intro?'<p class="scaffold">'+q.intro[L()]+'</p>':'')+(q.help?helpPanel(q):'')+ctrl(q)+'</div>';
+    var hasErr=!!errs[q.id];
+    var errHint=hasErr?'<p class="err-msg" role="alert">'+T[L()].errRequired+'</p>':'';
+    return '<div class="qblock'+(hasErr?' erred':'')+'"><h3 class="q" id="ql-'+q.id+'">'+q.q[L()]+(q.required?' <span class="req">*</span>':'')+(q.help?qmark(q):'')+'</h3>'+(q.intro?'<p class="scaffold">'+q.intro[L()]+'</p>':'')+(q.help?helpPanel(q):'')+ctrl(q)+errHint+'</div>';
   }).join("");
   var last=state.stage===totalStages();
+  var submitErrHtml=state.submitErr?'<p class="submit-err" role="alert">'+esc(state.submitErr)+'</p>':'';
   var nav='<div class="nav">'
     +(state.stage>1?'<button class="ghost" data-action="prev">'+ni("prev")+'<span>'+T[L()].prev+'</span></button>':'<span></span>')
     +(last?'<button class="cta" data-action="submit"><span>'+T[L()].submit+'</span>'+IC.check+'</button>':'<button class="cta" data-action="next"><span>'+T[L()].next+'</span>'+ni("next")+'</button>')
   +'</div>';
-  return topbar("form")+'<div class="wrap">'+progress()+'<div class="card"><div class="cardbody"><div class="eyebrow"><span class="dot"></span><span>'+st.title[L()]+'</span></div>'+qs+nav+'</div></div><p class="savenote">'+T[L()].saved+'</p></div>';
+  return topbar("form")+'<div class="wrap">'+progress()+'<div class="card"><div class="cardbody"><div class="eyebrow" tabindex="-1" id="stage-heading"><span class="dot"></span><span>'+st.title[L()]+'</span></div>'+qs+submitErrHtml+nav+'</div></div><p class="savenote">'+T[L()].saved+'</p></div>';
 }
 
 function vGen(){
@@ -746,6 +762,10 @@ function render(){
   else if(state.view==="admin")html=vAdmin();
   else if(state.view==="adminDetail")html=vDetail();
   document.getElementById("app").innerHTML=html;
+  if(state.view==="form"&&state.stage!==_lastFocusedStage&&!Object.keys(state.errors||{}).length){
+    _lastFocusedStage=state.stage;
+    requestAnimationFrame(function(){var h=document.getElementById("stage-heading");if(h)h.focus({preventScroll:true});});
+  }
 }
 
 /* ── generating animation ──────────────────────────────────────── */
@@ -804,6 +824,18 @@ var inflight={};
 
 // Re-request a single stage if its slot is empty and nothing is fetching it
 // (e.g. the background batch failed for that one stage).
+function validate(){
+  var st=currentStageData();
+  var errs={};
+  (st.questions||[]).forEach(function(q){
+    if(!q.required)return;
+    var a=answers[q.id];
+    var empty=(a==null)||(typeof a==="string"&&!a.trim());
+    if(empty)errs[q.id]=true;
+  });
+  return errs;
+}
+
 function ensureStage(i){
   if(DYNAMIC_STAGES&&DYNAMIC_STAGES[i]==null&&!inflight[i]) genBatch([i]);
 }
@@ -881,9 +913,10 @@ async function doSubmit(){
     if(!ok){try{detail=(await r.json()).detail||"";}catch(e){}}
   }catch(e){detail=String(e);}
   if(!ok){
-    alert((L()==="ar"?"تعذّر حفظ النموذج، من فضلك حاول مرة أخرى.":"Could not save the form, please try again.")+(detail?"\n\n"+detail:""));
-    return;
+    state.submitErr=(L()==="ar"?"تعذّر حفظ النموذج، حاول مرة أخرى":"Could not save the form, please try again")+(detail?" — "+detail:"");
+    render();return;
   }
+  state.submitErr="";
   clearDraft();answers={};state.stage=1;state.view="thanks";render();window.scrollTo(0,0);
 }
 
@@ -906,8 +939,8 @@ app.addEventListener("click",function(e){
   if(act==="lang"){state.lang=t.getAttribute("data-lang");answers={};state.stage=1;state.view="form";clearDraft();render();window.scrollTo(0,0);}
   else if(act==="resume"){loadDraft();state.view="form";render();window.scrollTo(0,0);}
   else if(act==="fresh"){clearDraft();answers={};state.stage=1;render();}
-  else if(act==="next"){if(state.stage===2){startGen();}else{state.stage++;saveDraft();render();window.scrollTo(0,0);}}
-  else if(act==="prev"){state.stage--;render();window.scrollTo(0,0);}
+  else if(act==="next"){var errs=validate();if(Object.keys(errs).length){state.errors=errs;render();return;}state.errors={};if(state.stage===2){startGen();}else{state.stage++;saveDraft();render();window.scrollTo(0,0);}}
+  else if(act==="prev"){state.errors={};state.submitErr="";state.stage--;render();window.scrollTo(0,0);}
   else if(act==="opt"){toggleOpt(t.getAttribute("data-q"),t.getAttribute("data-val"));}
   else if(act==="sugg"){var qi=t.getAttribute("data-q"),vi=parseInt(t.getAttribute("data-val"),10);var as=ans(qi);var ix=as.sel.indexOf(vi);if(ix>-1)as.sel.splice(ix,1);else as.sel.push(vi);saveDraft();render();}
   else if(act==="help"){var p=document.getElementById("help-"+t.getAttribute("data-q"));if(p)p.classList.toggle("closed");}
@@ -924,12 +957,12 @@ app.addEventListener("click",function(e){
     var ar2=Array.isArray(answers[qd])?answers[qd].slice():[];
     ar2.splice(di,1);if(!ar2.length)ar2=[bk2];answers[qd]=ar2;saveDraft();render();
   }
-  else if(act==="submit"){doSubmit();}
+  else if(act==="submit"){var errs2=validate();if(Object.keys(errs2).length){state.errors=errs2;render();return;}state.errors={};doSubmit();}
   else if(act==="goAdmin"){
     if(isAuth()){state.view="admin";state.subs=null;fetchSubs();}else{state.loginErr="";state.view="login";}
     render();window.scrollTo(0,0);
   }
-  else if(act==="goForm"){state.view=hasDraft()?"landing":"landing";render();window.scrollTo(0,0);}
+  else if(act==="goForm"){state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="goLanding"){clearInterval(state.genTimer);state.generating=false;state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="viewSub"){state.curSub=t.getAttribute("data-id");state.view="adminDetail";render();window.scrollTo(0,0);}
   else if(act==="backList"){state.view="admin";state.subs=null;fetchSubs();render();window.scrollTo(0,0);}
@@ -944,6 +977,7 @@ app.addEventListener("click",function(e){
 
 app.addEventListener("keydown",function(e){
   if(e.key==="Enter"&&state.view==="login"){var btn=document.querySelector("[data-action=doLogin]");if(btn)btn.click();}
+  if((e.key===" "||e.key==="Enter")&&e.target&&e.target.getAttribute("data-action")==="opt"){e.preventDefault();e.target.click();}
 });
 
 app.addEventListener("input",function(e){
@@ -955,6 +989,7 @@ app.addEventListener("input",function(e){
     try{el.setSelectionRange(cur,cur);}catch(x){}
   }
   var qid=el.getAttribute("data-q"),field=el.getAttribute("data-field");
+  if(qid&&state.errors&&state.errors[qid]){delete state.errors[qid];el.closest(".qblock")&&el.closest(".qblock").classList.remove("erred");var em=el.closest(".qblock")&&el.closest(".qblock").querySelector(".err-msg");if(em)em.remove();}
   if(field==="extra"){ans(qid).extra=el.value;}
   else if(field==="multi"){var i=parseInt(el.getAttribute("data-index"),10);var arr=Array.isArray(answers[qid])?answers[qid].slice():[];while(arr.length<=i)arr.push("");arr[i]=el.value;answers[qid]=arr;}
   else if(field==="pair"){var ix2=parseInt(el.getAttribute("data-index"),10);var key=el.getAttribute("data-key");var arr2=Array.isArray(answers[qid])?answers[qid].slice():[];while(arr2.length<=ix2)arr2.push({a:"",b:""});if(typeof arr2[ix2]!=="object")arr2[ix2]={a:"",b:""};arr2[ix2][key]=el.value;answers[qid]=arr2;}
