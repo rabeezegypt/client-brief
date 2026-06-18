@@ -46,7 +46,7 @@ export default async function handler(req) {
 
   const userMessage = `معلومات العميل:
 - اسم العلامة التجارية: ${brandName}
-- نشاط المشروع: ${activity || 'غير محدد'}
+- مجال العمل: ${activity || 'غير محدد'}
 - وصف العميل بكلماته: ${description}
 - اللغة المفضّلة: ${lang === 'en' ? 'English' : 'العربية'}
 

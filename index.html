@@ -303,8 +303,8 @@ var STAGES=[
    {id:"s1_name",type:"text",required:true,
     q:{ar:"اسم العلامة التجارية",en:"Brand name"}},
    {id:"s1_activity",type:"text",required:true,
-    q:{ar:"نشاط المشروع",en:"What does your business do?"},
-    placeholder:{ar:"مثال: مطعم مأكولات شامية في الرياض",en:"e.g. Levantine restaurant in Riyadh"}},
+    q:{ar:"مجال العمل",en:"Industry / Field"},
+    placeholder:{ar:"مثال: خدمات مالية وإدارة الثروات — الرياض",en:"e.g. Wealth management & financial advisory — Riyadh"}},
    {id:"s1_year",type:"number",
     q:{ar:"سنة التأسيس",en:"Year founded"}},
    {id:"s1_team",type:"scale",
@@ -830,7 +830,7 @@ app.addEventListener("change",function(e){
 function seed(){
   if(getSubs().length)return;
   setSubs([{id:"sample1",brand:"مطعم زيتون",lang:"ar",date:new Date(Date.now()-86400000).toISOString(),status:"new",answers:{
-    s1_name:"مطعم زيتون",s1_activity:"مطعم مأكولات شامية أصيلة في جدة",s1_year:"2016",s1_team:{sel:[1],extra:""},s1_website:"zaytoon.sa",s1_social:["instagram.com/zaytoon","x.com/zaytoon"],s1_email:"hello@zaytoon.sa",s1_phone:[{code:"+966",num:"500000000"}],s1_address:"حي الشاطئ، جدة",
+    s1_name:"مطعم زيتون",s1_activity:"خدمات استشارية متخصصة — الرياض",s1_year:"2016",s1_team:{sel:[1],extra:""},s1_website:"zaytoon.sa",s1_social:["instagram.com/zaytoon","x.com/zaytoon"],s1_email:"hello@zaytoon.sa",s1_phone:[{code:"+966",num:"500000000"}],s1_address:"حي الشاطئ، جدة",
     s2_desc:"بدأنا كمطعم عائلي بسيط وكبرنا لثلاثة فروع. نفخر بأصالة الأكل، لكن شكلنا لم يتطوّر معنا.",
     s3_trigger:{sel:[0,1,"other"],extra:"المطاعم الجديدة حولنا أكثر عصرية ونخشى أن نبدو قدامى."},
     s3_notworking:{sel:[0,5],extra:""},s3_lose:"نخسر الجيل الأصغر الذي يحكم بالمظهر أولًا.",s3_success:{sel:[0,1,4],extra:""},
