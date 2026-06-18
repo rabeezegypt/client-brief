@@ -1,20 +1,17 @@
+import { createClient } from '@supabase/supabase-js'
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const r = await fetch(
-    process.env.SUPABASE_URL + '/rest/v1/submissions?select=id,created_at,brand,lang,status,answers&order=created_at.desc',
-    {
-      headers: {
-        'apikey': process.env.SUPABASE_KEY,
-        'Authorization': 'Bearer ' + process.env.SUPABASE_KEY
-      }
-    }
-  );
+  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
 
-  if (!r.ok) {
-    const detail = await r.text();
-    return res.status(500).json({ error: 'DB error', detail });
-  }
+  const { data, error } = await supabase
+    .from('submissions')
+    .select('id, created_at, brand, lang, status, answers')
+    .order('created_at', { ascending: false });
 
-  return res.status(200).json(await r.json());
+  if (error) return res.status(500).json({ error: error.message });
+  return res.status(200).json(data);
 }
