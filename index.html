@@ -576,7 +576,7 @@ function topbar(mode){
   var right=(mode==="admin")
     ?'<a class="adminlink" data-action="goForm">'+ni("prev")+'<span>'+T[L()].backForm+'</span></a>'
     :'<a class="adminlink" data-action="goAdmin">'+T[L()].adminLink+'</a>';
-  return '<div class="topbar"><div class="brand">'+logoImg(32)+'<span class="sep"></span><span class="sub">'+(mode==="admin"?T[L()].adminTitle:T[L()].appName)+'</span></div>'+right+'</div>';
+  return '<div class="topbar"><div class="brand"><span style="cursor:pointer" data-action="goLanding">'+logoImg(32)+'</span><span class="sep"></span><span class="sub">'+(mode==="admin"?T[L()].adminTitle:T[L()].appName)+'</span></div>'+right+'</div>';
 }
 function progress(){
   var pct=Math.round((state.stage/totalStages())*100);
@@ -793,6 +793,7 @@ app.addEventListener("click",function(e){
     render();window.scrollTo(0,0);
   }
   else if(act==="goForm"){state.view=hasDraft()?"landing":"landing";render();window.scrollTo(0,0);}
+  else if(act==="goLanding"){clearInterval(state.genTimer);state.generating=false;state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="viewSub"){state.curSub=t.getAttribute("data-id");state.view="adminDetail";render();window.scrollTo(0,0);}
   else if(act==="backList"){state.view="admin";render();window.scrollTo(0,0);}
   else if(act==="restart"){clearDraft();answers={};state.stage=1;state.view="landing";render();window.scrollTo(0,0);}
