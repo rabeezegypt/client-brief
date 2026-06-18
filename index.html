@@ -729,7 +729,9 @@ async function generateStages(){
               var evt=JSON.parse(line.slice(6));
               if(evt.type==="progress") updateGenBar(evt.pct);
               if(evt.type==="done"){
+                console.log("[Rabeez] Raw generated data:", JSON.stringify(evt.data));
                 var mapped=mapStages(evt.data);
+                console.log("[Rabeez] Mapped stages:", mapped.length, JSON.stringify(mapped).slice(0,200));
                 if(mapped.length){ DYNAMIC_STAGES=mapped; }
                 else { DYNAMIC_STAGES=null; }
                 resolve();
