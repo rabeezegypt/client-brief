@@ -783,9 +783,16 @@ function toggleOpt(qid,raw){
 /* ── submit ────────────────────────────────────────────────────── */
 async function doSubmit(){
   var name=(typeof answers.s1_name==="string"&&answers.s1_name.trim())?answers.s1_name.trim():"—";
+  var ok=false,detail="";
   try{
-    await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand:name,lang:state.lang,answers:answers})});
-  }catch(e){}
+    var r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand:name,lang:state.lang,answers:answers})});
+    ok=r.ok;
+    if(!ok){try{detail=(await r.json()).detail||"";}catch(e){}}
+  }catch(e){detail=String(e);}
+  if(!ok){
+    alert((L()==="ar"?"تعذّر حفظ النموذج، من فضلك حاول مرة أخرى.":"Could not save the form, please try again.")+(detail?"\n\n"+detail:""));
+    return;
+  }
   clearDraft();answers={};state.stage=1;state.view="thanks";render();window.scrollTo(0,0);
 }
 
