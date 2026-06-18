@@ -424,6 +424,18 @@ var STAGES=[
 
 var GOLDEN={s2_desc:1,s3_trigger:1,s3_notworking:1,s3_lose:1,s4_diff:1,s4_perception:1,s5_current:1,s5_desired:1,s5_attach:1,s6_keep:1,s6_drop:1};
 
+/* ── dynamic stages (set after generation) ── */
+var DYNAMIC_STAGES=null; // null = not yet generated, [] = fallback
+
+function allStages(){
+  var base=STAGES.slice(0,2); // stages 1-2 always static
+  var rest=DYNAMIC_STAGES||STAGES.slice(2); // generated or fallback
+  return base.concat(rest);
+}
+
+function totalStages(){return allStages().length;}
+function currentStageData(){return allStages()[state.stage-1];}
+
 /* ── state ─────────────────────────────────────────────────────── */
 var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:""};
 var answers={};
@@ -441,7 +453,7 @@ function setAuth(v){try{localStorage.setItem(LS_AUTH,v?"1":"");}catch(e){}}
 /* ── helpers ───────────────────────────────────────────────────── */
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function ea(s){return esc(s);}
-function findQ(id){for(var i=0;i<STAGES.length;i++){for(var j=0;j<STAGES[i].questions.length;j++){if(STAGES[i].questions[j].id===id)return STAGES[i].questions[j];}}return null;}
+function findQ(id){var all=allStages();for(var i=0;i<all.length;i++){for(var j=0;j<all[i].questions.length;j++){if(all[i].questions[j].id===id)return all[i].questions[j];}}return null;}
 function ans(id){var a=answers[id];if(a&&typeof a==="object"&&a.sel)return a;a={sel:[],extra:""};answers[id]=a;return a;}
 function L(){return state.lang;}
 function rtl(){return L()==="ar";}
@@ -567,8 +579,8 @@ function topbar(mode){
   return '<div class="topbar"><div class="brand">'+logoImg(32)+'<span class="sep"></span><span class="sub">'+(mode==="admin"?T[L()].adminTitle:T[L()].appName)+'</span></div>'+right+'</div>';
 }
 function progress(){
-  var pct=Math.round((state.stage/STAGES.length)*100);
-  var lbl=L()==="ar"?("المرحلة "+state.stage+" من "+STAGES.length):("Stage "+state.stage+" of "+STAGES.length);
+  var pct=Math.round((state.stage/totalStages())*100);
+  var lbl=L()==="ar"?("المرحلة "+state.stage+" من "+totalStages()):("Stage "+state.stage+" of "+totalStages());
   return '<div class="progwrap"><div class="prog"><div class="prog-fill" style="width:'+pct+'%"></div></div><span class="progtext">'+lbl+'</span></div>';
 }
 
@@ -580,11 +592,11 @@ function vLanding(){
 }
 
 function vStage(){
-  var st=STAGES[state.stage-1];
+  var st=currentStageData();
   var qs=st.questions.map(function(q){
     return '<div class="qblock"><h3 class="q">'+q.q[L()]+(q.required?' <span class="req">*</span>':'')+(q.help?qmark(q):'')+'</h3>'+(q.intro?'<p class="scaffold">'+q.intro[L()]+'</p>':'')+(q.help?helpPanel(q):'')+ctrl(q)+'</div>';
   }).join("");
-  var last=state.stage===STAGES.length;
+  var last=state.stage===totalStages();
   var nav='<div class="nav">'
     +(state.stage>1?'<button class="ghost" data-action="prev">'+ni("prev")+'<span>'+T[L()].prev+'</span></button>':'<span></span>')
     +(last?'<button class="cta" data-action="submit"><span>'+T[L()].submit+'</span>'+IC.check+'</button>':'<button class="cta" data-action="next"><span>'+T[L()].next+'</span>'+ni("next")+'</button>')
@@ -629,7 +641,7 @@ function vDetail(){
     }).join("");
   }
   var gap='<div class="gap"><div class="gapcol"><div class="h">'+T.ar.cur+'</div>'+adjList("s5_current","")+'</div><div class="gapcol"><div class="h">'+T.ar.des+'</div>'+adjList("s5_desired","d")+'</div></div>';
-  var groups=STAGES.map(function(st){
+  var groups=allStages().map(function(st){
     var rows=st.questions.map(function(q){
       if(q.id==="s5_current"||q.id==="s5_desired")return "";
       var g=GOLDEN[q.id];
@@ -660,6 +672,51 @@ function render(){
 }
 
 /* ── generating animation ──────────────────────────────────────── */
+function buildCtrlFromGenerated(q){
+  /* Map generated question structure → same ctrl() format */
+  if(!q.type)q.type="textarea";
+  return q;
+}
+
+async function generateStages(){
+  var brandName=typeof answers.s1_name==="string"?answers.s1_name.trim():"";
+  var activity=typeof answers.s1_activity==="string"?answers.s1_activity.trim():"";
+  var description=typeof answers.s2_desc==="string"?answers.s2_desc.trim():"";
+
+  try{
+    var resp=await fetch("/api/generate",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({brandName:brandName,activity:activity,description:description,lang:L()})
+    });
+    if(!resp.ok)throw new Error("API "+resp.status);
+    var data=await resp.json();
+    if(data.stages&&data.stages.length){
+      /* Convert generated stages to STAGES-compatible format */
+      DYNAMIC_STAGES=data.stages.map(function(st){
+        return {
+          title:st.title||{ar:"",en:""},
+          questions:(st.questions||[]).map(function(q){
+            /* Ensure options are in [{ar,en}] format */
+            if(q.options&&q.options.length&&typeof q.options[0]==="string"){
+              q.options=q.options.map(function(o){return {ar:o,en:o};});
+            }
+            if(!q.id)q.id="gen_"+Math.random().toString(36).slice(2);
+            if(q.golden)GOLDEN[q.id]=1;
+            return q;
+          })
+        };
+      });
+      console.log("Generated",DYNAMIC_STAGES.length,"stages");
+    }else{
+      DYNAMIC_STAGES=null; // fallback to static
+    }
+  }catch(err){
+    console.warn("Generation failed, using fallback:",err.message);
+    DYNAMIC_STAGES=null; // fallback to static
+  }
+}
+
 function startGen(){
   state.generating=true;state.genPct=0;render();
   state.genTimer=setInterval(function(){
@@ -669,16 +726,21 @@ function startGen(){
     if(fill)fill.style.width=Math.round(state.genPct)+"%";
     if(pctEl)pctEl.textContent=T[L()].genPct(Math.round(state.genPct));
   },300);
-  setTimeout(function(){
-    clearInterval(state.genTimer);state.genPct=100;
+  setTimeout(async function(){
+    clearInterval(state.genTimer);state.genPct=90;
     var fill=document.getElementById("genFill");
     var pctEl=document.getElementById("genPct");
+    if(fill)fill.style.width="90%";
+    if(pctEl)pctEl.textContent=T[L()].genPct(90);
+    /* Call actual generation */
+    await generateStages();
+    state.genPct=100;
     if(fill)fill.style.width="100%";
     if(pctEl)pctEl.textContent=T[L()].genPct(100);
     setTimeout(function(){
       state.generating=false;state.stage=3;saveDraft();render();window.scrollTo(0,0);
     },400);
-  },3000);
+  },2500);
 }
 
 /* ── toggle option ─────────────────────────────────────────────── */
