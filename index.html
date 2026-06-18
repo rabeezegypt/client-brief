@@ -721,8 +721,7 @@ async function generateStages(){
         reader.read().then(function(r){
           if(r.done){ resolve(); return; }
           buffer+=decoder.decode(r.value,{stream:true});
-          var lines=buffer.split("
-");
+          var lines=buffer.split("\n");
           buffer=lines.pop();
           lines.forEach(function(line){
             if(!line.startsWith("data: ")) return;
