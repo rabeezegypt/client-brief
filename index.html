@@ -720,7 +720,7 @@ async function generateStages(){
       function read(){
         reader.read().then(function(r){
           if(r.done){ resolve(); return; }
-          buffer+=decoder.decode(r.value,{stream:true});
+          var chunk=decoder.decode(r.value,{stream:true});console.log('[Rabeez] chunk:',JSON.stringify(chunk.slice(0,100)));buffer+=chunk;
           var lines=buffer.split("\x0a");
           buffer=lines.pop();
           lines.forEach(function(line){
