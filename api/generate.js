@@ -3,58 +3,60 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { brandName, activity, description, lang } = req.body;
+  const { brandName, activity, description, lang } = req.body || {};
 
   if (!brandName || !description) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const isAr = lang !== 'en';
-
-  const SYSTEM_PROMPT = `You are a Creative Director at Rabeez branding agency. Generate customised brand discovery questions for a client seeking a rebrand.
-
-Rules:
-- Generate exactly 3 stages, each with exactly 3 questions (9 questions total)
-- All Arabic text must be formal Arabic (فصحى), singular form
-- All examples and options must be specific to the client's industry
-- Available field types: multi, scale, textarea
-- For multi: options array of 4-5 items [{ar, en}], always add other:true
-- For scale: options array of 4 items [{ar, en}]
-- For textarea: no options needed
-
-Return ONLY valid JSON, no extra text:
-{
-  "stages": [
-    {
-      "id": "s3",
-      "title": {"ar": "لماذا الآن؟", "en": "Why now?"},
-      "questions": [
-        {
-          "id": "s3_q1",
-          "q": {"ar": "Arabic question text", "en": "English question text"},
-          "type": "multi",
-          "options": [{"ar": "خيار", "en": "option"}],
-          "other": true,
-          "otherLabel": {"ar": "سبب آخر", "en": "Other reason"},
-          "help": {
-            "why": {"ar": "Why this question matters", "en": "Why this question matters"},
-            "ex": {"ar": "Industry-specific example", "en": "Industry-specific example"}
-          },
-          "golden": true,
-          "required": false
+  const tools = [{
+    name: "submit_questions",
+    description: "Submit the generated brand-discovery questions",
+    input_schema: {
+      type: "object",
+      properties: {
+        stages: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              id: { type: "string" },
+              title_ar: { type: "string" },
+              title_en: { type: "string" },
+              questions: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    q_ar: { type: "string" },
+                    q_en: { type: "string" },
+                    type: { type: "string", enum: ["multi", "scale", "textarea"] },
+                    options_ar: { type: "array", items: { type: "string" } },
+                    options_en: { type: "array", items: { type: "string" } },
+                    other: { type: "boolean" },
+                    help_why_ar: { type: "string" },
+                    help_why_en: { type: "string" },
+                    help_ex_ar: { type: "string" },
+                    help_ex_en: { type: "string" },
+                    golden: { type: "boolean" }
+                  },
+                  required: ["id", "q_ar", "q_en", "type"]
+                }
+              }
+            },
+            required: ["id", "title_ar", "title_en", "questions"]
+          }
         }
-      ]
+      },
+      required: ["stages"]
     }
-  ]
-}`;
+  }];
 
-  const userMsg = `Client info:
-- Brand name: ${brandName}
-- Industry: ${activity || 'Not specified'}
-- Description: ${description}
-- Preferred language: ${isAr ? 'Arabic' : 'English'}
+  const SYSTEM = "You are a Creative Director at Rabeez branding agency. Generate brand-discovery questions tailored precisely to the client's industry. Arabic must be formal (فصحى), singular voice. Generate exactly 3 stages with 3 questions each. multi/scale questions need options_ar and options_en (4-5 matching items); textarea needs no options. Mark strategic questions golden:true. Add other:true to multi questions. Help examples must be specific to the client's industry. Use the submit_questions tool.";
 
-Generate 3 stages × 3 questions tailored to this client's industry. Stage titles: (1) Why now?, (2) Audience & market, (3) The strategic gap.`;
+  const userMsg = `brand: ${brandName} | industry: ${activity || 'unspecified'} | description: ${description} | language: ${lang === 'en' ? 'English' : 'Arabic'}
+Stages: (1) Why now? لماذا الآن؟ (2) Audience & market الجمهور والسوق (3) The strategic gap الفجوة`;
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -66,8 +68,10 @@ Generate 3 stages × 3 questions tailored to this client's industry. Stage title
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2500,
-        system: SYSTEM_PROMPT,
+        max_tokens: 3000,
+        system: SYSTEM,
+        tools: tools,
+        tool_choice: { type: "tool", name: "submit_questions" },
         messages: [{ role: 'user', content: userMsg }]
       })
     });
@@ -78,12 +82,15 @@ Generate 3 stages × 3 questions tailored to this client's industry. Stage title
     }
 
     const data = await response.json();
-    const raw = data.content[0].text;
-    const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) return res.status(500).json({ error: 'No JSON in response', raw });
+    let toolInput = null;
+    for (const block of data.content) {
+      if (block.type === 'tool_use') { toolInput = block.input; break; }
+    }
+    if (!toolInput || !toolInput.stages) {
+      return res.status(500).json({ error: 'No tool output' });
+    }
 
-    const parsed = JSON.parse(match[0]);
-    return res.status(200).json(parsed);
+    return res.status(200).json(toolInput);
 
   } catch (err) {
     return res.status(500).json({ error: err.message });

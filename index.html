@@ -680,14 +680,34 @@ function buildCtrlFromGenerated(q){
 function mapStages(raw){
   return (raw.stages||[]).map(function(st){
     return {
-      title: st.title||{ar:"",en:""},
+      title: {ar: st.title_ar||"", en: st.title_en||st.title_ar||""},
       questions: (st.questions||[]).map(function(q){
-        if(!q.q && q.question_ar) q.q={ar:q.question_ar,en:q.question_en||q.question_ar};
-        if(!q.q) q.q={ar:"",en:""};
-        if(q.options&&q.options.length&&typeof q.options[0]==="string") q.options=q.options.map(function(o){return {ar:o,en:o};});
-        if(!q.id) q.id="gen_"+Math.random().toString(36).slice(2);
-        if(q.golden) GOLDEN[q.id]=1;
-        return q;
+        var out = {
+          id: q.id || ("gen_"+Math.random().toString(36).slice(2)),
+          q: {ar: q.q_ar||"", en: q.q_en||q.q_ar||""},
+          type: q.type || "textarea",
+          required: false
+        };
+        // options
+        if((q.type==="multi"||q.type==="scale") && q.options_ar && q.options_ar.length){
+          out.options = q.options_ar.map(function(o,i){
+            return {ar:o, en:(q.options_en&&q.options_en[i])||o};
+          });
+        }
+        // other option for multi
+        if(q.type==="multi" && q.other){
+          out.other = true;
+          out.otherLabel = {ar:"سبب آخر", en:"Other"};
+        }
+        // help
+        if(q.help_why_ar || q.help_ex_ar){
+          out.help = {
+            why: {ar:q.help_why_ar||"", en:q.help_why_en||q.help_why_ar||""},
+            ex:  {ar:q.help_ex_ar||"",  en:q.help_ex_en||q.help_ex_ar||""}
+          };
+        }
+        if(q.golden){ out.golden=true; GOLDEN[out.id]=1; }
+        return out;
       })
     };
   });
