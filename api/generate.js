@@ -1,48 +1,48 @@
-export const config = { runtime: 'edge' };
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للبراندنج. مهمتك تحليل معلومات العميل وتوليد أسئلة استبيان مخصصة ودقيقة.
+  const { brandName, activity, description, lang } = req.body;
 
-بناءً على اسم المشروع ونشاطه ووصفه، ولّد أسئلة المراحل ٣ إلى ٧ من استبيان إعادة بناء الهوية.
+  if (!brandName || !description) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
-القواعد الأساسية:
+  const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للبراندنج. مهمتك توليد أسئلة استبيان مخصصة ودقيقة بناءً على معلومات العميل.
+
+بناءً على اسم المشروع ومجاله ووصفه، ولّد أسئلة المراحل ٣ إلى ٧ من استبيان إعادة بناء الهوية.
+
+القواعد:
 - كل الأسئلة بالفصحى
-- الأمثلة والاختيارات مخصصة لقطاع العميل تماماً (مطعم، عيادة، شركة تقنية، إلخ)
-- إجمالي الأسئلة: ١٤ إلى ٢٠ سؤالاً
-- إذا أجاب العميل على شيء في الوصف المفتوح، لا تكرره كسؤال
-- كل سؤال له: id, question_ar, question_en, type, options (إن وجدت), help_why, help_example, golden (true/false), required (true/false)
-- أنواع الحقول: multi, scale, textarea, multipair, multiadd, suggest
+- الأمثلة والاختيارات مخصصة تماماً لمجال العميل
+- إجمالي الأسئلة: ١٤ إلى ١٨ سؤالاً موزعة على ٥ مراحل
+- إذا أجاب العميل على شيء في الوصف، لا تكرره
+- أنواع الحقول المتاحة: multi, scale, textarea, multipair, suggest
 
-أنواع الأسئلة:
-- multi: اختيار متعدد مع options مصفوفة [{ar, en}]
-- scale: مقياس مع options مصفوفة [{ar, en}]
-- textarea: نص حر
-- suggest: اقتراحات + نص حر (للأسئلة التي تحتاج إبداع)
-- multipair: صفوف مزدوجة (مثل المنافسين: اسم + رابط)
-- multiadd: صفوف مفردة قابلة للإضافة
+لكل سؤال:
+- id: نص فريد مثل s3_q1
+- question_ar: نص السؤال بالعربية (فصحى، مفرد)
+- question_en: نص السؤال بالإنجليزية
+- type: نوع الحقل
+- options: مصفوفة [{ar, en}] للـ multi والـ scale فقط
+- other: true إذا أردت إضافة خيار "أخرى"
+- otherLabel: {ar, en} إذا كان other: true
+- help_why: سبب السؤال (جملة واحدة، فصحى)
+- help_example: مثال مخصص لمجال العميل
+- golden: true للأسئلة الاستراتيجية المهمة
+- required: true أو false
 
-للأسئلة التي تحتوي other: أضف "other": true و "otherLabel": {"ar": "...", "en": "..."}
-
-أعد JSON فقط بدون أي نص إضافي، بالشكل التالي:
+أعد JSON فقط بدون أي نص إضافي:
 {
   "stages": [
     {
       "id": "s3",
-      "title": {"ar": "لماذا الآن؟", "en": "Why now?"},
+      "title": {"ar": "عنوان المرحلة", "en": "Stage title"},
       "questions": [...]
     }
   ]
 }`;
-
-export default async function handler(req) {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
-  }
-
-  const { brandName, activity, description, lang } = await req.json();
-
-  if (!brandName || !description) {
-    return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
-  }
 
   const userMessage = `معلومات العميل:
 - اسم العلامة التجارية: ${brandName}
@@ -70,25 +70,21 @@ export default async function handler(req) {
 
     if (!response.ok) {
       const err = await response.text();
-      return new Response(JSON.stringify({ error: 'Anthropic API error', detail: err }), { status: 500 });
+      return res.status(500).json({ error: 'Anthropic API error', detail: err });
     }
 
     const data = await response.json();
     const raw = data.content[0].text;
 
-    // Parse JSON from response
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return new Response(JSON.stringify({ error: 'Invalid JSON from model', raw }), { status: 500 });
+      return res.status(500).json({ error: 'Invalid JSON from model', raw });
     }
 
     const parsed = JSON.parse(jsonMatch[0]);
-    return new Response(JSON.stringify(parsed), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json(parsed);
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return res.status(500).json({ error: err.message });
   }
 }
