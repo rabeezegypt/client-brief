@@ -786,7 +786,7 @@ app.addEventListener("click",function(e){
   if(act==="lang"){state.lang=t.getAttribute("data-lang");answers={};state.stage=1;state.view="form";clearDraft();render();window.scrollTo(0,0);}
   else if(act==="resume"){loadDraft();state.view="form";render();window.scrollTo(0,0);}
   else if(act==="fresh"){clearDraft();answers={};state.stage=1;render();}
-  else if(act==="next"){if(state.stage===2)startGen();else{state.stage++;saveDraft();render();window.scrollTo(0,0);}}
+  else if(act==="next"){console.log('[Rabeez] next clicked, stage=',state.stage);if(state.stage===2){console.log('[Rabeez] calling startGen');startGen();}else{state.stage++;saveDraft();render();window.scrollTo(0,0);}}
   else if(act==="prev"){state.stage--;render();window.scrollTo(0,0);}
   else if(act==="opt"){toggleOpt(t.getAttribute("data-q"),t.getAttribute("data-val"));}
   else if(act==="sugg"){var qi=t.getAttribute("data-q"),vi=parseInt(t.getAttribute("data-val"),10);var as=ans(qi);var ix=as.sel.indexOf(vi);if(ix>-1)as.sel.splice(ix,1);else as.sel.push(vi);saveDraft();render();}
