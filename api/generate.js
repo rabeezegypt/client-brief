@@ -1,36 +1,38 @@
 export const config = { runtime: 'edge' };
 
-const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للبراندنج. مهمتك توليد أسئلة استبيان مخصصة ودقيقة بناءً على معلومات العميل.
+const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للبراندنج. ولّد أسئلة استبيان مخصصة لعميل يريد إعادة بناء هويته التجارية.
 
-بناءً على اسم المشروع ومجاله ووصفه، ولّد أسئلة المراحل ٣ إلى ٧ من استبيان إعادة بناء الهوية.
+القواعد الصارمة:
+- أعد 3 مراحل فقط (لماذا الآن، الجمهور والسوق، الفجوة) — لا أكثر
+- كل مرحلة تحتوي 3 أسئلة فقط — المجموع 9 أسئلة
+- الأسئلة بالفصحى، مخصصة لمجال العميل تماماً
+- الأمثلة من نفس مجال العميل
+- أنواع الحقول: multi أو scale أو textarea فقط
+- للـ multi: options مصفوفة من 4-5 عناصر [{ar, en}] مع other: true
+- للـ scale: options مصفوفة من 4 عناصر [{ar, en}]
 
-القواعد:
-- كل الأسئلة بالفصحى
-- الأمثلة والاختيارات مخصصة تماماً لمجال العميل
-- إجمالي الأسئلة: ١٤ إلى ١٨ سؤالاً موزعة على ٥ مراحل
-- إذا أجاب العميل على شيء في الوصف، لا تكرره
-- أنواع الحقول المتاحة: multi, scale, textarea, multipair, suggest
-
-لكل سؤال:
-- id: نص فريد مثل s3_q1
-- question_ar: نص السؤال بالعربية (فصحى، مفرد)
-- question_en: نص السؤال بالإنجليزية
-- type: نوع الحقل
-- options: مصفوفة [{ar, en}] للـ multi والـ scale فقط
-- other: true إذا أردت إضافة خيار "أخرى"
-- otherLabel: {ar, en} إذا كان other: true
-- help_why: سبب السؤال (جملة واحدة، فصحى)
-- help_example: مثال مخصص لمجال العميل
-- golden: true للأسئلة الاستراتيجية المهمة
-- required: true أو false
-
-أعد JSON فقط بدون أي نص إضافي:
+أعد JSON فقط، بدون أي نص خارجه:
 {
   "stages": [
     {
       "id": "s3",
-      "title": {"ar": "عنوان المرحلة", "en": "Stage title"},
-      "questions": [...]
+      "title": {"ar": "لماذا الآن؟", "en": "Why now?"},
+      "questions": [
+        {
+          "id": "s3_q1",
+          "q": {"ar": "نص السؤال", "en": "Question text"},
+          "type": "multi",
+          "options": [{"ar": "خيار", "en": "option"}],
+          "other": true,
+          "otherLabel": {"ar": "سبب آخر", "en": "Other reason"},
+          "help": {
+            "why": {"ar": "لماذا السؤال مهم", "en": "Why this matters"},
+            "ex": {"ar": "مثال من مجال العميل", "en": "Client-specific example"}
+          },
+          "golden": true,
+          "required": false
+        }
+      ]
     }
   ]
 }`;
@@ -46,15 +48,14 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
   }
 
-  const userMessage = `معلومات العميل:
-- اسم العلامة التجارية: ${brandName}
-- مجال العمل: ${activity || 'غير محدد'}
-- وصف العميل بكلماته: ${description}
-- اللغة المفضّلة: ${lang === 'en' ? 'English' : 'العربية'}
+  const userMessage = `العميل:
+- الاسم: ${brandName}
+- المجال: ${activity || 'غير محدد'}
+- الوصف: ${description}
+- اللغة: ${lang === 'en' ? 'English' : 'العربية'}
 
-ولّد أسئلة المراحل ٣ إلى ٧ المخصصة لهذا العميل.`;
+ولّد 3 مراحل، كل مرحلة 3 أسئلة مخصصة لهذا المجال.`;
 
-  // Call Anthropic with streaming
   const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -63,8 +64,8 @@ export default async function handler(req) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
       stream: true,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }]
@@ -76,7 +77,6 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: 'Anthropic API error', detail: err }), { status: 500 });
   }
 
-  // Stream SSE back to client
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   const encoder = new TextEncoder();
@@ -86,8 +86,7 @@ export default async function handler(req) {
     const decoder = new TextDecoder();
     let buffer = '';
     let fullText = '';
-    let inputTokens = 0;
-    let outputTokens = 0;
+    const TARGET_CHARS = 1800;
 
     try {
       while (true) {
@@ -101,25 +100,16 @@ export default async function handler(req) {
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
-          if (data === '[DONE]') continue;
-
           try {
             const event = JSON.parse(data);
 
-            if (event.type === 'message_start' && event.message?.usage) {
-              inputTokens = event.message.usage.input_tokens || 0;
-            }
-
             if (event.type === 'content_block_delta' && event.delta?.text) {
               fullText += event.delta.text;
-              outputTokens++;
-              // Send progress: rough estimate based on chars accumulated
-              const pct = Math.min(Math.round((fullText.length / 3000) * 85), 88);
+              const pct = Math.min(Math.round((fullText.length / TARGET_CHARS) * 88), 88);
               await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'progress', pct })}\n\n`));
             }
 
             if (event.type === 'message_stop') {
-              // Parse the complete JSON
               const jsonMatch = fullText.match(/\{[\s\S]*\}/);
               if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
@@ -128,9 +118,7 @@ export default async function handler(req) {
                 await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Invalid JSON' })}\n\n`));
               }
             }
-          } catch (e) {
-            // skip malformed lines
-          }
+          } catch (e) {}
         }
       }
     } catch (err) {
@@ -144,7 +132,6 @@ export default async function handler(req) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
     }
   });
 }
