@@ -187,6 +187,10 @@ textarea.inp{min-height:84px}
 .field .inp{margin-top:0}
 .login-err{font-size:13px;color:#FF5252;margin-top:12px;text-align:center}
 
+/* spinner */
+.spin{display:inline-block;width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* admin */
 .stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
 .stat{flex:1;min-width:140px;border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:16px 18px}
@@ -437,7 +441,7 @@ function totalStages(){return allStages().length;}
 function currentStageData(){return allStages()[state.stage-1];}
 
 /* ── state ─────────────────────────────────────────────────────── */
-var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:""};
+var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null};
 var answers={};
 
 /* ── storage ───────────────────────────────────────────────────── */
@@ -619,20 +623,25 @@ function vLogin(){
 }
 
 function vAdmin(){
-  var subs=getSubs(),nw=subs.filter(function(s){return s.status==="new";}).length;
+  if(state.subs===null)return topbar("admin")+'<div class="wrapw" style="text-align:center;padding:60px 16px"><div class="spin"></div></div>';
+  var subs=state.subs,nw=subs.filter(function(s){return s.status==="new";}).length;
   var list=subs.length?subs.map(function(s){
-    return '<div class="subcard"><div class="subinfo"><div class="subname">'+esc(s.brand)+'</div><div class="submeta">'+fmtDate(s.date)+'</div></div><span class="pill '+(s.status==="new"?"pnew":"prev2")+'">'+(s.status==="new"?(L()==="ar"?"جديد":"New"):(L()==="ar"?"تمت المراجعة":"Reviewed"))+'</span><button class="ghost sm" data-action="viewSub" data-id="'+s.id+'">'+IC.eye+'<span>'+(L()==="ar"?"عرض":"Open")+'</span></button></div>';
+    return '<div class="subcard"><div class="subinfo"><div class="subname">'+esc(s.brand)+'</div><div class="submeta">'+fmtDate(s.date||s.created_at)+'</div></div><span class="pill '+(s.status==="new"?"pnew":"prev2")+'">'+(s.status==="new"?(L()==="ar"?"جديد":"New"):(L()==="ar"?"تمت المراجعة":"Reviewed"))+'</span><button class="ghost sm" data-action="viewSub" data-id="'+s.id+'">'+IC.eye+'<span>'+(L()==="ar"?"عرض":"Open")+'</span></button></div>';
   }).join(""):'<div class="empty">'+T[L()].noSubs+'</div>';
   return topbar("admin")+'<div class="wrapw"><div style="display:flex;justify-content:flex-end;margin-bottom:16px"><button class="ghost sm" data-action="logout">'+T[L()].logout+'</button></div><div class="stats"><div class="stat"><div class="n">'+subs.length+'</div><div class="l">'+(L()==="ar"?"إجمالي النماذج":"Total")+'</div></div><div class="stat"><div class="n">'+nw+'</div><div class="l">'+(L()==="ar"?"جديدة":"New")+'</div></div></div>'+list+'</div>';
 }
 
 function vDetail(){
-  var subs=getSubs(),s=null;
+  var subs=state.subs||[],s=null;
   for(var i=0;i<subs.length;i++)if(subs[i].id===state.curSub){s=subs[i];break;}
   if(!s){state.view="admin";return vAdmin();}
   var lg=s.lang||"ar";
   /* mark as reviewed */
-  if(s.status==="new"){s.status="reviewed";var all=getSubs();for(var j=0;j<all.length;j++)if(all[j].id===s.id)all[j].status="reviewed";setSubs(all);}
+  if(s.status==="new"){
+    s.status="reviewed";
+    for(var j=0;j<subs.length;j++)if(subs[j].id===s.id)subs[j].status="reviewed";
+    fetch('/api/update-status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:s.id,status:'reviewed'})});
+  }
   function adjList(id,cls){
     var a=s.answers[id];
     if(!a||!a.sel||!a.sel.length)return '<span style="color:var(--text-3);font-size:12px">—</span>';
@@ -650,7 +659,7 @@ function vDetail(){
     }).join("");
     return rows?'<div class="group"><div class="group-h">'+st.title.ar+'</div>'+rows+'</div>':"";
   }).join("");
-  return topbar("admin")+'<div class="wrapw"><div class="detail-top"><button class="ghost" data-action="backList">'+ni("prev")+'<span>'+(L()==="ar"?"رجوع":"Back")+'</span></button></div><div class="summary"><h2>'+esc(s.brand)+'</h2><div class="meta">'+fmtDate(s.date)+' · '+(s.lang==="ar"?"العربية":"English")+'</div>'+gap+'</div>'+groups+'</div>';
+  return topbar("admin")+'<div class="wrapw"><div class="detail-top"><button class="ghost" data-action="backList">'+ni("prev")+'<span>'+(L()==="ar"?"رجوع":"Back")+'</span></button></div><div class="summary"><h2>'+esc(s.brand)+'</h2><div class="meta">'+fmtDate(s.date||s.created_at)+' · '+(s.lang==="ar"?"العربية":"English")+'</div>'+gap+'</div>'+groups+'</div>';
 }
 
 /* ── render ────────────────────────────────────────────────────── */
@@ -772,11 +781,22 @@ function toggleOpt(qid,raw){
 }
 
 /* ── submit ────────────────────────────────────────────────────── */
-function doSubmit(){
+async function doSubmit(){
   var name=(typeof answers.s1_name==="string"&&answers.s1_name.trim())?answers.s1_name.trim():"—";
-  var subs=getSubs();
-  subs.unshift({id:"s"+Date.now(),brand:name,lang:state.lang,date:new Date().toISOString(),status:"new",answers:JSON.parse(JSON.stringify(answers))});
-  setSubs(subs);clearDraft();answers={};state.stage=1;state.view="thanks";render();window.scrollTo(0,0);
+  try{
+    await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand:name,lang:state.lang,answers:answers})});
+  }catch(e){}
+  clearDraft();answers={};state.stage=1;state.view="thanks";render();window.scrollTo(0,0);
+}
+
+async function fetchSubs(){
+  try{
+    var r=await fetch('/api/submissions');
+    if(!r.ok)throw new Error();
+    var data=await r.json();
+    state.subs=Array.isArray(data)?data:[];
+  }catch(e){state.subs=[];}
+  render();
 }
 
 /* ── events ────────────────────────────────────────────────────── */
@@ -808,17 +828,17 @@ app.addEventListener("click",function(e){
   }
   else if(act==="submit"){doSubmit();}
   else if(act==="goAdmin"){
-    if(isAuth()){state.view="admin";}else{state.loginErr="";state.view="login";}
+    if(isAuth()){state.view="admin";state.subs=null;fetchSubs();}else{state.loginErr="";state.view="login";}
     render();window.scrollTo(0,0);
   }
   else if(act==="goForm"){state.view=hasDraft()?"landing":"landing";render();window.scrollTo(0,0);}
   else if(act==="goLanding"){clearInterval(state.genTimer);state.generating=false;state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="viewSub"){state.curSub=t.getAttribute("data-id");state.view="adminDetail";render();window.scrollTo(0,0);}
-  else if(act==="backList"){state.view="admin";render();window.scrollTo(0,0);}
+  else if(act==="backList"){state.view="admin";state.subs=null;fetchSubs();render();window.scrollTo(0,0);}
   else if(act==="restart"){clearDraft();answers={};state.stage=1;state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="doLogin"){
     var u=document.getElementById("lu"),p2=document.getElementById("lp");
-    if(u&&p2&&u.value===ADMIN_USER&&p2.value===ADMIN_PASS){setAuth(true);state.view="admin";state.loginErr="";render();window.scrollTo(0,0);}
+    if(u&&p2&&u.value===ADMIN_USER&&p2.value===ADMIN_PASS){setAuth(true);state.view="admin";state.loginErr="";state.subs=null;fetchSubs();render();window.scrollTo(0,0);}
     else{state.loginErr=T[L()].loginErr;render();}
   }
   else if(act==="logout"){setAuth(false);state.view="landing";render();}
