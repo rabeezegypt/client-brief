@@ -6,11 +6,17 @@
 <title>Client Brief — Rabeez</title>
 <link rel="preload" href="/fonts/Rakik-Light.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/BaybarsDisplay-Light.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/Albra-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/SunsetGothic-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:'HT Baybars Display';src:url('/fonts/BaybarsDisplay-Light.woff2') format('woff2');font-weight:300;font-style:normal;font-display:swap}
 @font-face{font-family:'HT Baybars Display';src:url('/fonts/BaybarsDisplay-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
 @font-face{font-family:'HT Rakik';src:url('/fonts/Rakik-Light.woff2') format('woff2');font-weight:300;font-style:normal;font-display:swap}
 @font-face{font-family:'HT Rakik';src:url('/fonts/Rakik-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:'Sunset Gothic Pro';src:url('/fonts/SunsetGothic-Thin.woff2') format('woff2');font-weight:200 300;font-style:normal;font-display:swap}
+@font-face{font-family:'Sunset Gothic Pro';src:url('/fonts/SunsetGothic-Regular.woff2') format('woff2');font-weight:400 700;font-style:normal;font-display:swap}
+@font-face{font-family:'Albra';src:url('/fonts/Albra-Regular.woff2') format('woff2');font-weight:300 400;font-style:normal;font-display:swap}
+@font-face{font-family:'Albra';src:url('/fonts/Albra-Medium.woff2') format('woff2');font-weight:500 700;font-style:normal;font-display:swap}
 :root{
   --bg:#0A0A0B;--surface:#141416;--surface-2:#1C1C1F;--border:#2A2A2E;
   --accent:#0A57FF;--glow:#0059FF;--cool:#3D7BFF;
@@ -19,6 +25,10 @@
   --font-display:'HT Baybars Display','IBM Plex Sans Arabic',Georgia,serif;
   --font-body:'HT Rakik','IBM Plex Sans Arabic',system-ui,sans-serif;
   color-scheme:dark;
+}
+html[lang="en"]{
+  --font-display:'Sunset Gothic Pro',Georgia,sans-serif;
+  --font-body:'Albra',Georgia,serif;
 }
 @media(prefers-color-scheme:light){
   :root{
