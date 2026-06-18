@@ -60,9 +60,10 @@ export default async function handler(req, res) {
   const arc = STAGE_SPECS.map((s, i) => (i + 1) + '. ' + s.title_en + ' (' + s.title_ar + ')').join(' | ');
   const langName = lang === 'en' ? 'English' : 'Arabic';
 
-  const SYSTEM = "You are a Creative Director and brand strategist at Rabeez branding agency. You design brand-discovery questions that are deeply strategic: every question must surface an insight a strategist can later analyze to shape positioning, messaging, and visual direction — never generic or superficial. Tailor every question precisely to the client's industry. Do not ask for basic facts already on file (brand name, industry, founding year, contact details, social links); focus entirely on strategy. Arabic must be formal (فصحى) in the singular second-person voice. Generate exactly ONE stage with exactly 3 questions. For multi and scale questions provide options_ar and options_en as 4-5 matching items each; textarea questions take no options. Set golden:true on the single most strategically revealing question in the stage. Set other:true on every multi question. help_why_* states why the question matters strategically; help_ex_* gives a concrete example specific to the client's industry. Question ids must be unique. Always use the submit_stage tool.";
+  const SYSTEM = "You are a Creative Director and brand strategist at Rabeez branding agency. You design brand-discovery questions that are deeply strategic: every question must surface an insight a strategist can later analyze to shape positioning, messaging, and visual direction — never generic or superficial. Tailor every question precisely to the client's industry. Do not ask for basic facts already on file (brand name, industry, founding year, contact details, social links). Arabic must be formal (فصحى) in the singular second-person voice. Generate exactly ONE stage with exactly 3 questions. Keep every field tight and economical: each question is one sentence; help_why_* is a single short clause of at most 12 words. For multi and scale questions provide options_ar and options_en as exactly 4 matching items each; textarea questions take no options. Provide help_ex_* (one short concrete example, at most 20 words) ONLY for the single golden question, and omit help_ex entirely on the other two questions. Set golden:true on the single most strategically revealing question. Set other:true on every multi question. Question ids must be unique. Always use the submit_stage tool.";
 
-  async function genStage(spec, idx) {
+  // Single attempt: one Anthropic call producing one stage.
+  async function callStage(spec, idx) {
     const userMsg = 'Client brand: ' + brandName + '\n'
       + 'Industry: ' + (activity || 'unspecified') + '\n'
       + 'In their own words: ' + description + '\n'
@@ -81,7 +82,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2500,
+        max_tokens: 1500,
         system: SYSTEM,
         tools: [tool],
         tool_choice: { type: 'tool', name: 'submit_stage' },
@@ -91,7 +92,12 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const detail = await response.text();
-      throw new Error('Anthropic ' + response.status + ': ' + detail);
+      const err = new Error('Anthropic ' + response.status);
+      err.status = response.status;
+      const ra = parseFloat(response.headers.get('retry-after'));
+      err.retryAfter = isNaN(ra) ? null : ra;
+      err.detail = detail;
+      throw err;
     }
 
     const data = await response.json();
@@ -108,12 +114,16 @@ export default async function handler(req, res) {
     return { idx: idx, stage: toolInput };
   }
 
-  // One retry per stage — a dropped stage leaves a visible gap in the form.
+  // Up to two attempts per stage. On a 429 (OTPM exhausted) wait for the window
+  // to refill before retrying — an instant retry just hits the same wall. Waits
+  // are capped so the parallel batch still finishes inside the 60s budget.
   async function genStageRetry(spec, idx) {
     try {
-      return await genStage(spec, idx);
+      return await callStage(spec, idx);
     } catch (e) {
-      return await genStage(spec, idx);
+      const waitS = e.status === 429 ? Math.min(e.retryAfter || 6, 10) : 1.5;
+      await new Promise(function (r) { setTimeout(r, waitS * 1000); });
+      return await callStage(spec, idx);
     }
   }
 
