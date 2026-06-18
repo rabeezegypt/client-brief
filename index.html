@@ -831,6 +831,11 @@ app.addEventListener("keydown",function(e){
 app.addEventListener("input",function(e){
   var el=e.target.closest("[data-q]");if(!el)return;
   if(el.type==="file")return;
+  if(L()==="ar"&&/[٠-٩۰-۹]/.test(el.value)){
+    var cur=el.selectionStart;
+    el.value=el.value.replace(/[٠-٩۰-۹]/g,function(d){return String(d.charCodeAt(0)&0xF);});
+    try{el.setSelectionRange(cur,cur);}catch(x){}
+  }
   var qid=el.getAttribute("data-q"),field=el.getAttribute("data-field");
   if(field==="extra"){ans(qid).extra=el.value;}
   else if(field==="multi"){var i=parseInt(el.getAttribute("data-index"),10);var arr=Array.isArray(answers[qid])?answers[qid].slice():[];while(arr.length<=i)arr.push("");arr[i]=el.value;answers[qid]=arr;}
@@ -838,10 +843,7 @@ app.addEventListener("input",function(e){
   else if(field==="phone"){var ix3=parseInt(el.getAttribute("data-index"),10);var key3=el.getAttribute("data-key");var arr3=Array.isArray(answers[qid])?answers[qid].slice():[];while(arr3.length<=ix3)arr3.push({code:"",num:""});if(typeof arr3[ix3]!=="object")arr3[ix3]={code:"",num:""};arr3[ix3][key3]=el.value;answers[qid]=arr3;}
   else{
     var val=el.value;
-    if(el.getAttribute("data-digits")){
-      val=val.replace(/[٠-٩۰-۹]/g,function(d){return String(d.charCodeAt(0)&0xF);}).replace(/[^0-9]/g,"");
-      if(el.value!==val)el.value=val;
-    }
+    if(el.getAttribute("data-digits")){val=val.replace(/[^0-9]/g,"");if(el.value!==val)el.value=val;}
     answers[qid]=val;
   }
   saveDraft();
