@@ -261,6 +261,7 @@ var T={
     eg:"مثال:",otherPh:"اكتب هنا…",fileHint:"اضغط لرفع ملف",saved:"يُحفَظ تلقائيًا",add:"+ أضف",
     resumeT:"لديك مسودة محفوظة",resumeB:"تريد المتابعة من حيث توقفت؟",resume:"متابعة",fresh:"البدء من جديد",
     genT:"جارٍ تحليل إجاباتك",genB:"سيستغرق هذا بضع ثوانٍ.",
+    stageLoading:"نُجهّز أسئلة هذه المرحلة…",
     thanksT:"وصلنا نموذجك. شكرًا لك.",thanksB:"سيراجعه فريق ربيز ويعود إليك قريبًا.",thanksAgain:"إرسال نموذج آخر",
     foot:"",
     adminLink:"لوحة الأدمن",backForm:"العودة للاستبيان",adminTitle:"النماذج الواردة",
@@ -274,6 +275,7 @@ var T={
     eg:"Example:",otherPh:"Type here…",fileHint:"Click to upload",saved:"Saved automatically",add:"+ Add",
     resumeT:"You have a saved draft",resumeB:"Continue where you left off?",resume:"Continue",fresh:"Start over",
     genT:"Analysing your answers",genB:"This will only take a moment.",
+    stageLoading:"Preparing this stage's questions…",
     thanksT:"We've received your form. Thank you.",thanksB:"The Rabeez team will review it and get back to you soon.",thanksAgain:"Submit another",
     foot:"",
     adminLink:"Admin",backForm:"Back to form",adminTitle:"Incoming submissions",
@@ -429,11 +431,17 @@ var STAGES=[
 var GOLDEN={s2_desc:1,s3_trigger:1,s3_notworking:1,s3_lose:1,s4_diff:1,s4_perception:1,s5_current:1,s5_desired:1,s5_attach:1,s6_keep:1,s6_drop:1};
 
 /* ── dynamic stages (set after generation) ── */
-var DYNAMIC_STAGES=null; // null = not yet generated, [] = fallback
+var DYNAMIC_COUNT=7;     // number of strategic stages we generate
+var DYNAMIC_STAGES=null; // null = not generated (use static fallback);
+                         // otherwise an array of length DYNAMIC_COUNT whose
+                         // slots fill in progressively (null slot = still loading)
 
 function allStages(){
   var base=STAGES.slice(0,2); // stages 1-2 always static
-  var rest=DYNAMIC_STAGES||STAGES.slice(2); // generated or fallback
+  if(DYNAMIC_STAGES===null) return base.concat(STAGES.slice(2)); // fallback
+  var rest=DYNAMIC_STAGES.map(function(s){
+    return s || {title:{ar:"…",en:"…"},questions:[],_loading:true};
+  });
   return base.concat(rest);
 }
 
@@ -598,6 +606,14 @@ function vLanding(){
 
 function vStage(){
   var st=currentStageData();
+  // Stage still being generated in the background → show a spinner and make
+  // sure a fetch for it is in flight (covers a failed background batch).
+  if(st._loading){
+    ensureStage(state.stage-3);
+    var body='<div style="text-align:center;padding:48px 16px"><div class="spin"></div><p style="margin-top:18px;color:var(--text-2);font-size:14px">'+T[L()].stageLoading+'</p></div>';
+    var navL='<div class="nav">'+(state.stage>1?'<button class="ghost" data-action="prev">'+ni("prev")+'<span>'+T[L()].prev+'</span></button>':'<span></span>')+'<span></span></div>';
+    return topbar("form")+'<div class="wrap">'+progress()+'<div class="card"><div class="cardbody">'+body+navL+'</div></div></div>';
+  }
   var qs=st.questions.map(function(q){
     return '<div class="qblock"><h3 class="q">'+q.q[L()]+(q.required?' <span class="req">*</span>':'')+(q.help?qmark(q):'')+'</h3>'+(q.intro?'<p class="scaffold">'+q.intro[L()]+'</p>':'')+(q.help?helpPanel(q):'')+ctrl(q)+'</div>';
   }).join("");
@@ -691,6 +707,7 @@ function buildCtrlFromGenerated(q){
 function mapStages(raw){
   return (raw.stages||[]).map(function(st){
     return {
+      _idx: (typeof st._idx==="number")?st._idx:null,
       title: {ar: st.title_ar||"", en: st.title_en||st.title_ar||""},
       questions: (st.questions||[]).map(function(q){
         var out = {
@@ -731,42 +748,65 @@ function updateGenBar(pct){
   if(pctEl) pctEl.textContent=T[L()].genPct(Math.round(pct));
 }
 
-async function generateStages(){
+// Which dynamic-stage indices currently have a request in flight.
+var inflight={};
+
+// Re-request a single stage if its slot is empty and nothing is fetching it
+// (e.g. the background batch failed for that one stage).
+function ensureStage(i){
+  if(DYNAMIC_STAGES&&DYNAMIC_STAGES[i]==null&&!inflight[i]) genBatch([i]);
+}
+
+// Generate a specific batch of stages (by 0-based index into the dynamic set)
+// and drop each result into its DYNAMIC_STAGES slot. Returns the list of
+// indices that were successfully filled.
+async function genBatch(indices){
   var brandName=typeof answers.s1_name==="string"?answers.s1_name.trim():"";
   var activity=typeof answers.s1_activity==="string"?answers.s1_activity.trim():"";
   var description=typeof answers.s2_desc==="string"?answers.s2_desc.trim():"";
-
+  var filled=[];
+  indices.forEach(function(i){inflight[i]=true;});
   try{
-    // Animate bar while waiting
-    var fakeTimer=setInterval(function(){
-      if(state.genPct<85){state.genPct+=3;updateGenBar(state.genPct);}
-    },400);
-
     var resp=await fetch("/api/generate",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({brandName:brandName,activity:activity,description:description,lang:L()})
+      body:JSON.stringify({brandName:brandName,activity:activity,description:description,lang:L(),only:indices})
     });
-
-    clearInterval(fakeTimer);
-
     if(!resp.ok) throw new Error("API "+resp.status);
-    var data=await resp.json();
-    var mapped=mapStages(data);
-    if(mapped.length) DYNAMIC_STAGES=mapped;
-    else DYNAMIC_STAGES=null;
+    var mapped=mapStages(await resp.json());
+    if(!DYNAMIC_STAGES) DYNAMIC_STAGES=new Array(DYNAMIC_COUNT).fill(null);
+    mapped.forEach(function(m,k){
+      var i=(m._idx!=null)?m._idx:indices[k];
+      if(i!=null&&i>=0&&i<DYNAMIC_COUNT){DYNAMIC_STAGES[i]=m;filled.push(i);}
+    });
   }catch(err){
-    console.warn("Generation failed, using fallback:",err.message);
-    DYNAMIC_STAGES=null;
+    console.warn("Batch failed:",indices,err.message);
   }
+  indices.forEach(function(i){inflight[i]=false;});
+  // If the user is sitting on a stage we just filled, refresh it.
+  if(state.view==="form"&&!state.generating) render();
+  return filled;
 }
+
 function startGen(){
   state.generating=true;state.genPct=0;render();
   state.genPct=5; updateGenBar(5);
-  generateStages().then(function(){
+  var fakeTimer=setInterval(function(){
+    if(state.genPct<90){state.genPct+=4;updateGenBar(state.genPct);}
+  },350);
+  DYNAMIC_STAGES=new Array(DYNAMIC_COUNT).fill(null);
+  // Batch 1: just the first dynamic stage, so the user sees questions fast.
+  genBatch([0]).then(function(filled){
+    clearInterval(fakeTimer);
     updateGenBar(100);
+    if(!filled.length){DYNAMIC_STAGES=null;} // total failure → static fallback
     setTimeout(function(){
       state.generating=false;state.stage=3;saveDraft();render();window.scrollTo(0,0);
+      // Batch 2: the remaining stages, in the background.
+      if(filled.length){
+        var rest=[];for(var i=1;i<DYNAMIC_COUNT;i++)rest.push(i);
+        genBatch(rest);
+      }
     },300);
   });
 }

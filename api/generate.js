@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { brandName, activity, description, lang } = req.body || {};
+  const { brandName, activity, description, lang, only } = req.body || {};
 
   if (!brandName || !description) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -127,13 +127,19 @@ export default async function handler(req, res) {
     }
   }
 
+  // Optional subset: `only` is an array of 0-based stage indices to generate.
+  // This lets the client request stages in batches (progressive generation).
+  const idxList = (Array.isArray(only) && only.length)
+    ? only.filter(function (i) { return Number.isInteger(i) && i >= 0 && i < STAGE_SPECS.length; })
+    : STAGE_SPECS.map(function (s, i) { return i; });
+
   try {
-    const settled = await Promise.allSettled(STAGE_SPECS.map((s, i) => genStageRetry(s, i)));
+    const settled = await Promise.allSettled(idxList.map(function (i) { return genStageRetry(STAGE_SPECS[i], i); }));
     const stages = settled
       .filter(function (r) { return r.status === 'fulfilled'; })
       .map(function (r) { return r.value; })
       .sort(function (a, b) { return a.idx - b.idx; })
-      .map(function (r) { return r.stage; });
+      .map(function (r) { r.stage._idx = r.idx; return r.stage; });
 
     if (!stages.length) {
       const firstErr = settled.find(function (r) { return r.status === 'rejected'; });
