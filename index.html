@@ -41,9 +41,10 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .sub{font-family:var(--font-display);font-weight:300;font-size:.9rem;color:var(--text-2)}
 .adminlink{font-size:12px;color:var(--text-2);border:1px solid var(--border);border-radius:999px;padding:6px 14px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;transition:border-color .2s,color .2s}
 .adminlink:hover{border-color:var(--accent);color:var(--text)}
+.beta{font-size:10px;font-weight:500;color:rgba(61,123,255,.9);background:rgba(10,87,255,.15);border:1px solid rgba(10,87,255,.35);border-radius:999px;padding:2px 8px;letter-spacing:.04em;text-transform:uppercase;flex:0 0 auto}
 
 /* layout */
-.wrap{max-width:640px;margin:0 auto;padding:26px 16px 60px}
+.wrap{max-width:960px;margin:0 auto;padding:26px 16px 60px}
 .wrapw{max-width:920px;margin:0 auto;padding:26px 16px 60px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--card-radius);overflow:hidden}
 .cardbody{padding:24px 22px 26px}
@@ -485,7 +486,8 @@ function ctrl(q){
 
   if(t==="text"||t==="number"||t==="url"||t==="email"){
     var v=typeof answers[id]==="string"?answers[id]:"";
-    return '<input class="inp" type="'+(t==="url"?"url":t==="email"?"email":t==="number"?"number":"text")+'" data-q="'+id+'" value="'+ea(v)+'" placeholder="'+ph(q)+'">';
+    var extra=t==="number"?' inputmode="numeric" data-digits="1"':'';
+    return '<input class="inp" type="'+(t==="url"?"url":t==="email"?"email":"text")+'"'+extra+' data-q="'+id+'" value="'+ea(v)+'" placeholder="'+ph(q)+'">';
   }
   if(t==="textarea"||t==="multitext"){
     var v2=typeof answers[id]==="string"?answers[id]:"";
@@ -575,7 +577,7 @@ function topbar(mode){
   var right=(mode==="admin")
     ?'<a class="adminlink" data-action="goForm">'+ni("prev")+'<span>'+T[L()].backForm+'</span></a>'
     :'<a class="adminlink" data-action="goAdmin">'+T[L()].adminLink+'</a>';
-  return '<div class="topbar"><div class="brand"><span style="cursor:pointer" data-action="goLanding">'+logoImg(32)+'</span><span class="sep"></span><span class="sub">'+(mode==="admin"?T[L()].adminTitle:T[L()].appName)+'</span></div>'+right+'</div>';
+  return '<div class="topbar"><div class="brand"><span style="cursor:pointer" data-action="goLanding">'+logoImg(32)+'</span><span class="sep"></span><span class="sub">'+(mode==="admin"?T[L()].adminTitle:T[L()].appName)+'</span><span class="beta">Beta</span></div>'+right+'</div>';
 }
 function progress(){
   var pct=Math.round((state.stage/totalStages())*100);
@@ -834,7 +836,14 @@ app.addEventListener("input",function(e){
   else if(field==="multi"){var i=parseInt(el.getAttribute("data-index"),10);var arr=Array.isArray(answers[qid])?answers[qid].slice():[];while(arr.length<=i)arr.push("");arr[i]=el.value;answers[qid]=arr;}
   else if(field==="pair"){var ix2=parseInt(el.getAttribute("data-index"),10);var key=el.getAttribute("data-key");var arr2=Array.isArray(answers[qid])?answers[qid].slice():[];while(arr2.length<=ix2)arr2.push({a:"",b:""});if(typeof arr2[ix2]!=="object")arr2[ix2]={a:"",b:""};arr2[ix2][key]=el.value;answers[qid]=arr2;}
   else if(field==="phone"){var ix3=parseInt(el.getAttribute("data-index"),10);var key3=el.getAttribute("data-key");var arr3=Array.isArray(answers[qid])?answers[qid].slice():[];while(arr3.length<=ix3)arr3.push({code:"",num:""});if(typeof arr3[ix3]!=="object")arr3[ix3]={code:"",num:""};arr3[ix3][key3]=el.value;answers[qid]=arr3;}
-  else{answers[qid]=el.value;}
+  else{
+    var val=el.value;
+    if(el.getAttribute("data-digits")){
+      val=val.replace(/[٠-٩۰-۹]/g,function(d){return String(d.charCodeAt(0)&0xF);}).replace(/[^0-9]/g,"");
+      if(el.value!==val)el.value=val;
+    }
+    answers[qid]=val;
+  }
   saveDraft();
 });
 
