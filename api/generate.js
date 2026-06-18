@@ -1,15 +1,6 @@
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+export const config = { runtime: 'edge' };
 
-  const { brandName, activity, description, lang } = req.body;
-
-  if (!brandName || !description) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للبراندنج. مهمتك توليد أسئلة استبيان مخصصة ودقيقة بناءً على معلومات العميل.
+const SYSTEM_PROMPT = `أنت Creative Director في وكالة ربيز للبراندنج. مهمتك توليد أسئلة استبيان مخصصة ودقيقة بناءً على معلومات العميل.
 
 بناءً على اسم المشروع ومجاله ووصفه، ولّد أسئلة المراحل ٣ إلى ٧ من استبيان إعادة بناء الهوية.
 
@@ -44,6 +35,17 @@ export default async function handler(req, res) {
   ]
 }`;
 
+export default async function handler(req) {
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+  }
+
+  const { brandName, activity, description, lang } = await req.json();
+
+  if (!brandName || !description) {
+    return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400 });
+  }
+
   const userMessage = `معلومات العميل:
 - اسم العلامة التجارية: ${brandName}
 - مجال العمل: ${activity || 'غير محدد'}
@@ -52,39 +54,97 @@ export default async function handler(req, res) {
 
 ولّد أسئلة المراحل ٣ إلى ٧ المخصصة لهذا العميل.`;
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4000,
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userMessage }]
-      })
-    });
+  // Call Anthropic with streaming
+  const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      stream: true,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }]
+    })
+  });
 
-    if (!response.ok) {
-      const err = await response.text();
-      return res.status(500).json({ error: 'Anthropic API error', detail: err });
-    }
-
-    const data = await response.json();
-    const raw = data.content[0].text;
-
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return res.status(500).json({ error: 'Invalid JSON from model', raw });
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
-    return res.status(200).json(parsed);
-
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+  if (!anthropicRes.ok) {
+    const err = await anthropicRes.text();
+    return new Response(JSON.stringify({ error: 'Anthropic API error', detail: err }), { status: 500 });
   }
+
+  // Stream SSE back to client
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+
+  (async () => {
+    const reader = anthropicRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullText = '';
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const event = JSON.parse(data);
+
+            if (event.type === 'message_start' && event.message?.usage) {
+              inputTokens = event.message.usage.input_tokens || 0;
+            }
+
+            if (event.type === 'content_block_delta' && event.delta?.text) {
+              fullText += event.delta.text;
+              outputTokens++;
+              // Send progress: rough estimate based on chars accumulated
+              const pct = Math.min(Math.round((fullText.length / 3000) * 85), 88);
+              await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'progress', pct })}\n\n`));
+            }
+
+            if (event.type === 'message_stop') {
+              // Parse the complete JSON
+              const jsonMatch = fullText.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'done', data: parsed })}\n\n`));
+              } else {
+                await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: 'Invalid JSON' })}\n\n`));
+              }
+            }
+          } catch (e) {
+            // skip malformed lines
+          }
+        }
+      }
+    } catch (err) {
+      await writer.write(encoder.encode(`data: ${JSON.stringify({ type: 'error', message: err.message })}\n\n`));
+    } finally {
+      await writer.close();
+    }
+  })();
+
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    }
+  });
 }

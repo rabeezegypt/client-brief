@@ -166,8 +166,7 @@ textarea.inp{min-height:84px}
 .gen-prog{max-width:320px;margin:0 auto;height:4px;background:var(--surface-2);border-radius:999px;overflow:hidden}
 .gen-prog-fill{height:100%;background:linear-gradient(90deg,var(--glow),var(--cool));border-radius:999px;transition:width .3s ease}
 .gen-pct{margin-top:10px;font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
-.spinner{width:38px;height:38px;border:2px solid var(--surface-2);border-top-color:var(--accent);border-radius:50%;margin:0 auto;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+
 
 /* thanks */
 .thanks{text-align:center;padding:54px 16px}
@@ -606,7 +605,7 @@ function vStage(){
 
 function vGen(){
   var pct=state.genPct;
-  return topbar("form")+'<div class="wrap">'+progress()+'<div class="gen"><div class="spinner"></div><h2>'+T[L()].genT+'</h2><p>'+T[L()].genB+'</p><div class="gen-prog"><div class="gen-prog-fill" id="genFill" style="width:'+pct+'%"></div></div><div class="gen-pct" id="genPct">'+T[L()].genPct(pct)+'</div></div></div>';
+  return topbar("form")+'<div class="wrap">'+progress()+'<div class="gen"><h2>'+T[L()].genT+'</h2><p>'+T[L()].genB+'</p><div class="gen-prog"><div class="gen-prog-fill" id="genFill" style="width:'+pct+'%"></div></div><div class="gen-pct" id="genPct">'+T[L()].genPct(pct)+'</div></div></div>';
 }
 
 function vThanks(){
@@ -678,69 +677,86 @@ function buildCtrlFromGenerated(q){
   return q;
 }
 
+function mapStages(raw){
+  return (raw.stages||[]).map(function(st){
+    return {
+      title: st.title||{ar:"",en:""},
+      questions: (st.questions||[]).map(function(q){
+        /* normalise field names from generated output */
+        if(q.question_ar) q.q={ar:q.question_ar,en:q.question_en||q.question_ar};
+        if(q.help_why||q.help_example) q.help={why:{ar:q.help_why||"",en:q.help_why||""},ex:{ar:q.help_example||"",en:q.help_example||""}};
+        if(q.options&&q.options.length&&typeof q.options[0]==="string") q.options=q.options.map(function(o){return {ar:o,en:o};});
+        if(!q.id) q.id="gen_"+Math.random().toString(36).slice(2);
+        if(q.golden) GOLDEN[q.id]=1;
+        return q;
+      })
+    };
+  });
+}
+
+function updateGenBar(pct){
+  var fill=document.getElementById("genFill");
+  var pctEl=document.getElementById("genPct");
+  if(fill) fill.style.width=Math.round(pct)+"%";
+  if(pctEl) pctEl.textContent=T[L()].genPct(Math.round(pct));
+}
+
 async function generateStages(){
   var brandName=typeof answers.s1_name==="string"?answers.s1_name.trim():"";
   var activity=typeof answers.s1_activity==="string"?answers.s1_activity.trim():"";
   var description=typeof answers.s2_desc==="string"?answers.s2_desc.trim():"";
 
-  try{
-    var resp=await fetch("/api/generate",{
+  return new Promise(function(resolve){
+    fetch("/api/generate",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({brandName:brandName,activity:activity,description:description,lang:L()})
-    });
-    if(!resp.ok)throw new Error("API "+resp.status);
-    var data=await resp.json();
-    if(data.stages&&data.stages.length){
-      /* Convert generated stages to STAGES-compatible format */
-      DYNAMIC_STAGES=data.stages.map(function(st){
-        return {
-          title:st.title||{ar:"",en:""},
-          questions:(st.questions||[]).map(function(q){
-            /* Ensure options are in [{ar,en}] format */
-            if(q.options&&q.options.length&&typeof q.options[0]==="string"){
-              q.options=q.options.map(function(o){return {ar:o,en:o};});
-            }
-            if(!q.id)q.id="gen_"+Math.random().toString(36).slice(2);
-            if(q.golden)GOLDEN[q.id]=1;
-            return q;
-          })
-        };
-      });
-      console.log("Generated",DYNAMIC_STAGES.length,"stages");
-    }else{
-      DYNAMIC_STAGES=null; // fallback to static
-    }
-  }catch(err){
-    console.warn("Generation failed, using fallback:",err.message);
-    DYNAMIC_STAGES=null; // fallback to static
-  }
+    }).then(function(resp){
+      if(!resp.ok) throw new Error("API "+resp.status);
+      var reader=resp.body.getReader();
+      var decoder=new TextDecoder();
+      var buffer="";
+
+      function read(){
+        reader.read().then(function(r){
+          if(r.done){ resolve(); return; }
+          buffer+=decoder.decode(r.value,{stream:true});
+          var lines=buffer.split("
+");
+          buffer=lines.pop();
+          lines.forEach(function(line){
+            if(!line.startsWith("data: ")) return;
+            try{
+              var evt=JSON.parse(line.slice(6));
+              if(evt.type==="progress") updateGenBar(evt.pct);
+              if(evt.type==="done"){
+                var mapped=mapStages(evt.data);
+                if(mapped.length){ DYNAMIC_STAGES=mapped; }
+                else { DYNAMIC_STAGES=null; }
+                resolve();
+              }
+              if(evt.type==="error"){ console.warn("gen error:",evt.message); DYNAMIC_STAGES=null; resolve(); }
+            }catch(e){}
+          });
+          read();
+        }).catch(function(err){ console.warn("stream err:",err); DYNAMIC_STAGES=null; resolve(); });
+      }
+      read();
+    }).catch(function(err){ console.warn("fetch err:",err); DYNAMIC_STAGES=null; resolve(); });
+  });
 }
 
 function startGen(){
   state.generating=true;state.genPct=0;render();
-  state.genTimer=setInterval(function(){
-    state.genPct=Math.min(state.genPct+(Math.random()*8+3),95);
-    var fill=document.getElementById("genFill");
-    var pctEl=document.getElementById("genPct");
-    if(fill)fill.style.width=Math.round(state.genPct)+"%";
-    if(pctEl)pctEl.textContent=T[L()].genPct(Math.round(state.genPct));
-  },300);
-  setTimeout(async function(){
-    clearInterval(state.genTimer);state.genPct=90;
-    var fill=document.getElementById("genFill");
-    var pctEl=document.getElementById("genPct");
-    if(fill)fill.style.width="90%";
-    if(pctEl)pctEl.textContent=T[L()].genPct(90);
-    /* Call actual generation */
-    await generateStages();
-    state.genPct=100;
-    if(fill)fill.style.width="100%";
-    if(pctEl)pctEl.textContent=T[L()].genPct(100);
+  // Start at 5% immediately to show activity
+  setTimeout(function(){updateGenBar(5);},100);
+  // Stream drives the bar — when done, go to stage 3
+  generateStages().then(function(){
+    updateGenBar(100);
     setTimeout(function(){
       state.generating=false;state.stage=3;saveDraft();render();window.scrollTo(0,0);
     },400);
-  },2500);
+  });
 }
 
 /* ── toggle option ─────────────────────────────────────────────── */
