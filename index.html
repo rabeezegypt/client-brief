@@ -148,12 +148,12 @@ textarea.inp{min-height:84px}
 .addwrap{margin-top:16px;display:flex;flex-direction:column;gap:8px}
 .addrow{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}.phone-wrap .addrow{direction:ltr;unicode-bidi:isolate}
 .sp-psw{position:relative;flex:0 0 auto}
-.sp-trig{align-self:stretch;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);cursor:pointer}
+.sp-trig{display:block;padding:12px 10px;font-size:16px;line-height:1.7;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);cursor:pointer;white-space:nowrap;text-align:center}
 .sp-trig:hover{border-color:var(--accent)}
 .sp-trig.open{border-color:var(--accent)}
-.sp-ic{width:20px;height:20px;fill:currentColor;flex:0 0 auto}
-.sp-trig .sp-ph{color:var(--text-3)}
-.sp-chev{width:11px;height:11px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;opacity:.45}
+.sp-ic{width:20px;height:20px;fill:currentColor;flex:0 0 auto;vertical-align:middle}
+.sp-phtext{color:var(--text-3);vertical-align:middle}
+.sp-chev{width:11px;height:11px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;opacity:.45;vertical-align:middle;margin-inline-start:5px}
 .sp-menu{position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:30;display:grid;grid-template-columns:repeat(3,40px);gap:4px;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,.28)}
 .sp-opt{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:transparent;border:1px solid transparent;border-radius:var(--r);color:var(--text-2);cursor:pointer}
 .sp-opt:hover{color:var(--text);border-color:var(--border)}
@@ -658,13 +658,13 @@ function ctrl(q){
   if(t==="socialpair"){
     var arr=Array.isArray(answers[id])?answers[id]:[{platform:"",handle:""}];
     if(!arr.length)arr=[{platform:"",handle:""}];
-    var phIcon='<svg class="sp-ic sp-ph" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
     var chev='<svg class="sp-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
+    var phText='<span class="sp-phtext">'+(L()==="ar"?"المنصة":"Platform")+'</span>';
     var rows=arr.map(function(row,i){
       row=row||{platform:"",handle:""};
       var pdata=SOCIAL_PLATFORMS.find(function(p){return p.id===row.platform;})||null;
       var key=id+"#"+i, open=state.spOpen===key;
-      var trigIcon=pdata?pdata.icon:phIcon;
+      var trigIcon=pdata?pdata.icon:phText;
       var trigLabel=pdata?pdata[L()]:(L()==="ar"?"اختر المنصة":"Choose platform");
       var menu=open?'<div class="sp-menu" role="listbox">'+SOCIAL_PLATFORMS.map(function(p){
         return '<button type="button" class="sp-opt'+(row.platform===p.id?" on":"")+'" data-action="spPick" data-q="'+id+'" data-index="'+i+'" data-platform="'+p.id+'" role="option" aria-selected="'+(row.platform===p.id?"true":"false")+'" title="'+ea(p[L()])+'" aria-label="'+ea(p[L()])+'">'+p.icon+'</button>';
