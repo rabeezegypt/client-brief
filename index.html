@@ -82,7 +82,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .dot{width:6px;height:6px;border-radius:999px;background:var(--accent);flex:0 0 auto}
 .qblock{padding:16px 0;border-top:1px solid var(--border)}
 .qblock:first-of-type{border-top:none;padding-top:2px}
-.contact-subh{padding:20px 0 4px;font-family:var(--font-display);font-size:12px;font-weight:600;color:var(--text-2)}
+.contact-subh{display:flex;align-items:center;gap:8px;padding:20px 0 4px;font-family:var(--font-display);font-size:12px;font-weight:600;color:var(--text-2)}
 .q{margin:0;font-family:var(--font-display);font-weight:300;font-size:1.25rem;line-height:1.5;color:var(--text)}
 .req{color:var(--cool);font-weight:500}
 .qmark{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);font-size:14px;font-weight:500;cursor:pointer;margin-inline-start:8px;position:relative;vertical-align:middle;line-height:1;padding:0}
@@ -709,7 +709,7 @@ function vStage(){
   }
   var errs=state.errors||{};
   var qs=st.questions.map(function(q){
-    if(q.type==="subheading") return '<div class="contact-subh">'+q.q[L()]+'</div>';
+    if(q.type==="subheading") return '<div class="contact-subh"><span class="dot"></span><span>'+q.q[L()]+'</span></div>';
     var hasErr=!!errs[q.id];
     var errHint=hasErr?'<p class="err-msg" role="alert">'+T[L()].errRequired+'</p>':'';
     return '<div class="qblock'+(hasErr?' erred':'')+'"><h3 class="q" id="ql-'+q.id+'">'+q.q[L()]+(q.required?' <span class="req">*</span>':'')+(q.help?qmark(q):'')+'</h3>'+(q.intro?'<p class="scaffold">'+q.intro[L()]+'</p>':'')+(q.help?helpPanel(q):'')+ctrl(q)+errHint+'</div>';
