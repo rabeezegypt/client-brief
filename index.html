@@ -147,10 +147,18 @@ textarea.inp{min-height:84px}
 /* repeatable add rows */
 .addwrap{margin-top:16px;display:flex;flex-direction:column;gap:8px}
 .addrow{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}.phone-wrap .addrow{direction:ltr;unicode-bidi:isolate}
-.sp-wrap .addrow{direction:ltr;unicode-bidi:isolate}
-.sp-psw{position:relative;flex:0 0 150px;min-width:0}
-.sp-psw .sp-dot{position:absolute;top:50%;left:12px;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;pointer-events:none;z-index:1}
-.sp-psw .sp-sel{padding-left:28px;width:100%;cursor:pointer}
+.sp-psw{position:relative;flex:0 0 auto}
+.sp-trig{align-self:stretch;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);cursor:pointer}
+.sp-trig:hover{border-color:var(--accent)}
+.sp-trig.open{border-color:var(--accent)}
+.sp-ic{width:20px;height:20px;fill:currentColor;flex:0 0 auto}
+.sp-trig .sp-ph{color:var(--text-3)}
+.sp-chev{width:11px;height:11px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;opacity:.45}
+.sp-menu{position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:30;display:grid;grid-template-columns:repeat(3,40px);gap:4px;padding:6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.sp-opt{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:transparent;border:1px solid transparent;border-radius:var(--r);color:var(--text-2);cursor:pointer}
+.sp-opt:hover{color:var(--text);border-color:var(--border)}
+.sp-opt.on{color:var(--text);border-color:var(--accent);background:var(--surface-2)}
+.sp-handle{flex:1;min-width:0}
 .addrow .inp{margin-top:0}
 .inp-sm{flex:0 0 33%}
 .inp-lg{flex:1}
@@ -362,18 +370,12 @@ var ADJ=[["عصري","Modern"],["فاخر","Premium"],["مبتكر","Innovative"
 ].map(function(p){return {ar:p[0],en:p[1]};});
 
 var SOCIAL_PLATFORMS=[
-  {id:"instagram",ar:"إنستغرام",en:"Instagram",color:"#E1306C"},
-  {id:"x",ar:"إكس (تويتر)",en:"X (Twitter)",color:"#000000"},
-  {id:"tiktok",ar:"تيك توك",en:"TikTok",color:"#010101"},
-  {id:"linkedin",ar:"لينكدإن",en:"LinkedIn",color:"#0A66C2"},
-  {id:"facebook",ar:"فيسبوك",en:"Facebook",color:"#1877F2"},
-  {id:"youtube",ar:"يوتيوب",en:"YouTube",color:"#FF0000"},
-  {id:"snapchat",ar:"سناب شات",en:"Snapchat",color:"#FFFC00"},
-  {id:"whatsapp",ar:"واتساب بزنس",en:"WhatsApp Business",color:"#25D366"},
-  {id:"telegram",ar:"تيليغرام",en:"Telegram",color:"#2AABEE"},
-  {id:"behance",ar:"بيهانس",en:"Behance",color:"#1769FF"},
-  {id:"pinterest",ar:"بينترست",en:"Pinterest",color:"#E60023"},
-  {id:"other",ar:"أخرى",en:"Other",color:"#888888"}
+  {id:"x",ar:"إكس",en:"X",icon:'<svg class="sp-ic" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'},
+  {id:"linkedin",ar:"لينكدإن",en:"LinkedIn",icon:'<svg class="sp-ic" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"/></svg>'},
+  {id:"instagram",ar:"إنستغرام",en:"Instagram",icon:'<svg class="sp-ic" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/></svg>'},
+  {id:"facebook",ar:"فيسبوك",en:"Facebook",icon:'<svg class="sp-ic" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>'},
+  {id:"snapchat",ar:"سناب شات",en:"Snapchat",icon:'<svg class="sp-ic" viewBox="0 0 24 24"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.12-.015-.18-.015-.075 0-.135.015-.21.015-1.468 0-2.426-.689-3.279-1.288-.599-.42-1.107-.78-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.951-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807z"/></svg>'},
+  {id:"tiktok",ar:"تيك توك",en:"TikTok",icon:'<svg class="sp-ic" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>'}
 ];
 
 function O(l){return l.map(function(p){return {ar:p[0],en:p[1]};});}
@@ -531,7 +533,7 @@ function totalStages(){return allStages().length;}
 function currentStageData(){return allStages()[state.stage-1];}
 
 /* ── state ─────────────────────────────────────────────────────── */
-var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:""};
+var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:"",spOpen:""};
 var _lastFocusedStage=0;
 var answers={};
 
@@ -656,20 +658,23 @@ function ctrl(q){
   if(t==="socialpair"){
     var arr=Array.isArray(answers[id])?answers[id]:[{platform:"",handle:""}];
     if(!arr.length)arr=[{platform:"",handle:""}];
-    var spOptions=SOCIAL_PLATFORMS.map(function(p){
-      return '<option value="'+p.id+'">'+p[L()]+'</option>';
-    }).join("");
+    var phIcon='<svg class="sp-ic sp-ph" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
+    var chev='<svg class="sp-chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
     var rows=arr.map(function(row,i){
       row=row||{platform:"",handle:""};
       var pdata=SOCIAL_PLATFORMS.find(function(p){return p.id===row.platform;})||null;
-      var dotStyle=pdata?'style="background:'+pdata.color+'"':'style="background:var(--border)"';
+      var key=id+"#"+i, open=state.spOpen===key;
+      var trigIcon=pdata?pdata.icon:phIcon;
+      var trigLabel=pdata?pdata[L()]:(L()==="ar"?"اختر المنصة":"Choose platform");
+      var menu=open?'<div class="sp-menu" role="listbox">'+SOCIAL_PLATFORMS.map(function(p){
+        return '<button type="button" class="sp-opt'+(row.platform===p.id?" on":"")+'" data-action="spPick" data-q="'+id+'" data-index="'+i+'" data-platform="'+p.id+'" role="option" aria-selected="'+(row.platform===p.id?"true":"false")+'" title="'+ea(p[L()])+'" aria-label="'+ea(p[L()])+'">'+p.icon+'</button>';
+      }).join("")+'</div>':'';
       return '<div class="addrow sp-row">'
-        +'<div class="sp-psw"><span class="sp-dot" '+dotStyle+'></span>'
-        +'<select class="inp sp-sel" data-q="'+id+'" data-field="spplatform" data-index="'+i+'">'
-        +'<option value="">'+(L()==="ar"?"المنصة":"Platform")+'</option>'
-        +SOCIAL_PLATFORMS.map(function(p){return '<option value="'+p.id+'"'+(row.platform===p.id?" selected":"")+'>'+p[L()]+'</option>';}).join("")
-        +'</select></div>'
-        +'<input class="inp" style="flex:1;min-width:0" data-q="'+id+'" data-field="sphandle" data-index="'+i+'" value="'+ea(row.handle||"")+'" placeholder="'+(L()==="ar"?"@اسم_الحساب أو الرابط":"@handle or URL")+'">'
+        +'<div class="sp-psw">'
+        +'<button type="button" class="sp-trig'+(open?" open":"")+'" data-action="spToggle" data-q="'+id+'" data-index="'+i+'" aria-haspopup="listbox" aria-expanded="'+(open?"true":"false")+'" aria-label="'+ea(trigLabel)+'">'+trigIcon+chev+'</button>'
+        +menu
+        +'</div>'
+        +'<input class="inp sp-handle" dir="auto" data-q="'+id+'" data-field="sphandle" data-index="'+i+'" value="'+ea(row.handle||"")+'" placeholder="'+(L()==="ar"?"@اسم_الحساب أو الرابط":"@handle or URL")+'">'
         +(i>0?'<button class="delbtn" data-action="delField" data-q="'+id+'" data-index="'+i+'" aria-label="'+(L()==="ar"?"حذف":"Remove")+'">&times;</button>':'')
       +'</div>';
     }).join("");
@@ -1019,7 +1024,10 @@ async function fetchSubs(){
 var app=document.getElementById("app");
 
 app.addEventListener("click",function(e){
-  var t=e.target.closest("[data-action]");if(!t)return;
+  var t=e.target.closest("[data-action]");
+  // Close an open social-platform dropdown when clicking outside of it.
+  if(state.spOpen&&!e.target.closest(".sp-psw")){state.spOpen="";if(!t){render();return;}}
+  if(!t)return;
   var act=t.getAttribute("data-action");
   if(act==="lang"){state.lang=t.getAttribute("data-lang");answers={};state.stage=1;state.view="form";clearDraft();render();window.scrollTo(0,0);}
   else if(act==="resume"){loadDraft();state.view="form";render();window.scrollTo(0,0);}
@@ -1028,6 +1036,14 @@ app.addEventListener("click",function(e){
   else if(act==="prev"){state.errors={};state.submitErr="";state.stage--;render();window.scrollTo(0,0);}
   else if(act==="opt"){toggleOpt(t.getAttribute("data-q"),t.getAttribute("data-val"));}
   else if(act==="sugg"){var qi=t.getAttribute("data-q"),vi=parseInt(t.getAttribute("data-val"),10);var as=ans(qi);var ix=as.sel.indexOf(vi);if(ix>-1)as.sel.splice(ix,1);else as.sel.push(vi);saveDraft();render();}
+  else if(act==="spToggle"){var spk=t.getAttribute("data-q")+"#"+t.getAttribute("data-index");state.spOpen=state.spOpen===spk?"":spk;render();}
+  else if(act==="spPick"){
+    var spq=t.getAttribute("data-q"),spi=parseInt(t.getAttribute("data-index"),10),spp=t.getAttribute("data-platform");
+    var spa=Array.isArray(answers[spq])?answers[spq].slice():[];
+    while(spa.length<=spi)spa.push({platform:"",handle:""});
+    if(typeof spa[spi]!=="object"||!spa[spi])spa[spi]={platform:"",handle:""};
+    spa[spi].platform=spp;answers[spq]=spa;state.spOpen="";saveDraft();render();
+  }
   else if(act==="help"){var p=document.getElementById("help-"+t.getAttribute("data-q"));if(p)p.classList.toggle("closed");}
   else if(act==="addField"){
     var qa=t.getAttribute("data-q"),ft=t.getAttribute("data-ftype");
@@ -1062,6 +1078,7 @@ app.addEventListener("click",function(e){
 });
 
 app.addEventListener("keydown",function(e){
+  if(e.key==="Escape"&&state.spOpen){state.spOpen="";render();return;}
   if(e.key==="Enter"&&state.view==="login"){var btn=document.querySelector("[data-action=doLogin]");if(btn)btn.click();}
   if((e.key===" "||e.key==="Enter")&&e.target&&e.target.getAttribute("data-action")==="opt"){e.preventDefault();e.target.click();}
 });
@@ -1090,15 +1107,6 @@ app.addEventListener("input",function(e){
 });
 
 app.addEventListener("change",function(e){
-  var selEl=e.target.closest('select[data-field="spplatform"]');
-  if(selEl){
-    var qid=selEl.getAttribute("data-q"),ix=parseInt(selEl.getAttribute("data-index"),10);
-    var arr=Array.isArray(answers[qid])?answers[qid].slice():[];
-    while(arr.length<=ix)arr.push({platform:"",handle:""});
-    if(typeof arr[ix]!=="object")arr[ix]={platform:"",handle:""};
-    arr[ix].platform=selEl.value;answers[qid]=arr;saveDraft();render();
-    return;
-  }
   var el=e.target.closest('input[type=file][data-q]');if(!el)return;
   var qid2=el.getAttribute("data-q"),f=el.files&&el.files[0];answers[qid2]=f?f.name:"";saveDraft();render();
 });
