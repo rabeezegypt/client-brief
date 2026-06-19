@@ -760,18 +760,20 @@ function vDetail(){
       return '<span class="atag '+cls+'">'+esc(ADJ[v]?ADJ[v][lg]:"")+'</span>';
     }).join("");
   }
-  var gap='<div class="gap"><div class="gapcol"><div class="h">'+T.ar.cur+'</div>'+adjList("s5_current","")+'</div><div class="gapcol"><div class="h">'+T.ar.des+'</div>'+adjList("s5_desired","d")+'</div></div>';
-  var groups=allStages().map(function(st){
+  var snap=(s.answers&&s.answers.__stages)?s.answers.__stages:allStages();
+  var gold=(lg==="ar"?"ذهبي":"Golden");
+  var gap='<div class="gap"><div class="gapcol"><div class="h">'+T[lg].cur+'</div>'+adjList("s5_current","")+'</div><div class="gapcol"><div class="h">'+T[lg].des+'</div>'+adjList("s5_desired","d")+'</div></div>';
+  var groups=snap.map(function(st){
     var rows=st.questions.map(function(q){
       if(q.id==="s5_current"||q.id==="s5_desired")return "";
-      var g=GOLDEN[q.id];
+      var g=q.golden||GOLDEN[q.id];
       var val=s.answers[q.id];
       var rendered=(q.type==="multi"||q.type==="scale")?fmtTags(q,val,lg):fmt(q,val,lg);
-      return '<div class="kv'+(g?" gold":"")+'"><div class="k">'+q.q.ar+(g?' <span class="gbadge">ذهبي</span>':"")+'</div><div class="v">'+rendered+'</div></div>';
+      return '<div class="kv'+(g?" gold":"")+'"><div class="k">'+((q.q&&(q.q[lg]||q.q.ar))||"")+(g?' <span class="gbadge">'+gold+'</span>':"")+'</div><div class="v">'+rendered+'</div></div>';
     }).join("");
-    return rows?'<div class="group"><div class="group-h">'+st.title.ar+'</div>'+rows+'</div>':"";
+    return rows?'<div class="group"><div class="group-h">'+((st.title&&(st.title[lg]||st.title.ar))||"")+'</div>'+rows+'</div>':"";
   }).join("");
-  return topbar("admin")+'<div class="wrapw"><div class="detail-top"><button class="ghost" data-action="backList">'+ni("prev")+'<span>'+(L()==="ar"?"رجوع":"Back")+'</span></button></div><div class="summary"><h2>'+esc(s.brand)+'</h2><div class="meta">'+fmtDate(s.date||s.created_at)+' · '+(s.lang==="ar"?"العربية":"English")+'</div>'+gap+'</div>'+groups+'</div>';
+  return topbar("admin")+'<div class="wrapw"><div class="detail-top"><button class="ghost" data-action="backList">'+ni("prev")+'<span>'+(L()==="ar"?"رجوع":"Back")+'</span></button></div><div class="summary"><h2>'+esc(s.brand)+'</h2><div class="meta">'+fmtDate(s.date||s.created_at)+' · '+(s.lang==="ar"?"العربية":"English")+'</div></div><div dir="'+(lg==="en"?"ltr":"rtl")+'">'+gap+groups+'</div></div>';
 }
 
 /* ── render ────────────────────────────────────────────────────── */
@@ -937,7 +939,7 @@ async function doSubmit(){
   var name=(typeof answers.s1_name==="string"&&answers.s1_name.trim())?answers.s1_name.trim():"—";
   var ok=false,detail="";
   try{
-    var r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand:name,lang:state.lang,answers:answers})});
+    var r=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brand:name,lang:state.lang,answers:answers,questions:allStages()})});
     ok=r.ok;
     if(!ok){try{detail=(await r.json()).detail||"";}catch(e){}}
   }catch(e){detail=String(e);}
