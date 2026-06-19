@@ -4,39 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Client Brief — Rabeez</title>
+<script>try{var _t=localStorage.getItem('rbz_theme');if(_t==='light'||_t==='dark')document.documentElement.setAttribute('data-theme',_t);}catch(e){}</script>
 <link rel="preload" href="/fonts/Rakik-Light.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/BaybarsDisplay-Light.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/Albra-Regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/SunsetGothic-Regular.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:'HT Baybars Display';src:url('/fonts/BaybarsDisplay-Light.woff2') format('woff2');font-weight:300;font-style:normal;font-display:swap}
 @font-face{font-family:'HT Baybars Display';src:url('/fonts/BaybarsDisplay-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap}
 @font-face{font-family:'HT Rakik';src:url('/fonts/Rakik-Light.woff2') format('woff2');font-weight:300;font-style:normal;font-display:swap}
 @font-face{font-family:'HT Rakik';src:url('/fonts/Rakik-Medium.woff2') format('woff2');font-weight:500;font-style:normal;font-display:swap}
-@font-face{font-family:'Sunset Gothic Pro';src:url('/fonts/SunsetGothic-Thin.woff2') format('woff2');font-weight:200 300;font-style:normal;font-display:swap}
-@font-face{font-family:'Sunset Gothic Pro';src:url('/fonts/SunsetGothic-Regular.woff2') format('woff2');font-weight:400 700;font-style:normal;font-display:swap}
+@font-face{font-family:'Sunset Gothic Pro';src:url('/fonts/SunsetGothic-Thin.woff2') format('woff2');font-weight:200;font-style:normal;font-display:swap}
+@font-face{font-family:'Sunset Gothic Pro';src:url('/fonts/SunsetGothic-Regular.woff2') format('woff2');font-weight:300 700;font-style:normal;font-display:swap}
 @font-face{font-family:'Albra';src:url('/fonts/Albra-Regular.woff2') format('woff2');font-weight:300 400;font-style:normal;font-display:swap}
 @font-face{font-family:'Albra';src:url('/fonts/Albra-Medium.woff2') format('woff2');font-weight:500 700;font-style:normal;font-display:swap}
 :root{
   --bg:#0A0A0B;--surface:#141416;--surface-2:#1C1C1F;--border:#2A2A2E;
   --accent:#0A57FF;--glow:#0059FF;--cool:#3D7BFF;--accent-2:#0047cc;
   --text:#F5F5F5;--text-2:#9A9A9F;--text-3:#888890;
-  --ok:#5FC08C;--err:#FF5252;--r:12px;--card-radius:16px;
+  --ok:#5FC08C;--err:#FF5252;--r:12px;--card-radius:16px;--logo-invert:0;
   --font-display:'HT Baybars Display','IBM Plex Sans Arabic',Georgia,serif;
   --font-body:'HT Rakik','IBM Plex Sans Arabic',system-ui,sans-serif;
   color-scheme:dark;
 }
 html[lang="en"]{
-  --font-display:'Sunset Gothic Pro',Georgia,sans-serif;
-  --font-body:'Albra',Georgia,serif;
+  --font-display:'Albra',Georgia,serif;
+  --font-body:'Sunset Gothic Pro',system-ui,sans-serif;
 }
 @media(prefers-color-scheme:light){
-  :root{
+  html:not([data-theme]){
     --bg:#F5F5F4;--surface:#FFFFFF;--surface-2:#F0F0EE;--border:#D8D8D4;
     --text:#0A0A0B;--text-2:#5A5A5F;--text-3:#68686D;--err:#DC2626;
-    color-scheme:light;
+    color-scheme:light;--logo-invert:1;
   }
-  .logo-img{filter:invert(1);}
+}
+html[data-theme="light"]{
+  --bg:#F5F5F4;--surface:#FFFFFF;--surface-2:#F0F0EE;--border:#D8D8D4;
+  --text:#0A0A0B;--text-2:#5A5A5F;--text-3:#68686D;--err:#DC2626;
+  color-scheme:light;--logo-invert:1;
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);font-weight:300;line-height:1.75;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;overflow-x:hidden}
@@ -51,7 +54,11 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .brand{display:flex;align-items:center;gap:12px;min-width:0}
 .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adminlink{flex:0 0 auto}
-.logo-img{height:32px;width:auto;display:block}
+.topright{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.iconbtn{flex:0 0 auto;width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-2);cursor:pointer;transition:border-color .2s,color .2s}
+.iconbtn:hover{border-color:var(--accent);color:var(--text)}
+.iconbtn .ic{width:18px;height:18px}
+.logo-img{height:32px;width:auto;display:block;filter:invert(var(--logo-invert))}
 .sep{width:1px;height:16px;background:var(--border)}
 .sub{font-family:var(--font-display);font-weight:300;font-size:.9rem;color:var(--text-2)}
 .adminlink{font-size:12px;color:var(--text-2);border:1px solid var(--border);border-radius:999px;padding:8px 16px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:border-color .2s,color .2s}
@@ -296,7 +303,9 @@ var IC={
   ar:'<svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>',
   doc:'<svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>',
   eye:'<svg class="ic" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
-  lock:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+  lock:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  sun:'<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon:'<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>'
 };
 
 /* ── translations ───────────────────────────────────────────────── */
@@ -657,7 +666,20 @@ function topbar(mode){
   var right=(mode==="admin")
     ?'<a class="adminlink" data-action="goForm">'+ni("prev")+'<span>'+T[L()].backForm+'</span></a>'
     :'<a class="adminlink" data-action="goAdmin">'+T[L()].adminLink+'</a>';
-  return '<div class="topbar"><div class="brand"><span style="cursor:pointer" data-action="goLanding">'+logoImg(32)+'</span><span class="sep"></span><span class="sub">'+(mode==="admin"?T[L()].adminTitle:T[L()].appName)+'</span><span class="beta">Beta</span></div>'+right+'</div>';
+  var theme='<button class="iconbtn" data-action="toggleTheme" aria-label="'+(L()==="ar"?"تبديل المظهر":"Toggle theme")+'">'+themeIcon()+'</button>';
+  return '<div class="topbar"><div class="brand"><span style="cursor:pointer" data-action="goLanding">'+logoImg(32)+'</span><span class="sep"></span><span class="sub">'+(mode==="admin"?T[L()].adminTitle:T[L()].appName)+'</span><span class="beta">Beta</span></div><div class="topright">'+theme+right+'</div></div>';
+}
+function effectiveTheme(){
+  var t=document.documentElement.getAttribute("data-theme");
+  if(t==="light"||t==="dark")return t;
+  try{return window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";}catch(e){return "dark";}
+}
+function themeIcon(){return effectiveTheme()==="light"?IC.moon:IC.sun;}
+function toggleTheme(){
+  var next=effectiveTheme()==="light"?"dark":"light";
+  try{localStorage.setItem("rbz_theme",next);}catch(e){}
+  document.documentElement.setAttribute("data-theme",next);
+  render();
 }
 function progress(){
   var pct=Math.round((state.stage/totalStages())*100);
@@ -980,6 +1002,7 @@ app.addEventListener("click",function(e){
     else{state.loginErr=T[L()].loginErr;render();}
   }
   else if(act==="logout"){setAuth(false);state.view="landing";render();}
+  else if(act==="toggleTheme"){toggleTheme();}
 });
 
 app.addEventListener("keydown",function(e){
