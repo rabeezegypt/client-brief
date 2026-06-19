@@ -191,9 +191,8 @@ textarea.inp{min-height:84px}
 .land{text-align:center;padding:40px 8px 16px}
 .land-logo{margin:0 auto 24px;display:flex;justify-content:center}
 .land-logo img{height:44px;width:auto}
-.land-title{font-family:var(--font-display);font-weight:700;font-size:2rem;line-height:1.15;margin:0 0 16px;color:var(--text);min-height:1.15em}
-.land-intro-line{font-size:1.0625rem;color:var(--text-2);margin:0 auto 28px;max-width:440px;line-height:1.8;min-height:1.8em}
-.land-title.typing::after,.land-intro-line.typing::after{content:"|";color:var(--accent);animation:blinkC .7s step-end infinite;font-weight:300;font-style:normal}
+.land-title{font-family:var(--font-display);font-weight:700;font-size:2rem;line-height:1.15;margin:0 0 24px;color:var(--text);min-height:1.15em}
+.land-title.typing::after{content:"|";color:var(--accent);animation:blinkC .7s step-end infinite;font-weight:300;font-style:normal}
 @keyframes blinkC{50%{opacity:0}}
 .land-tag{margin:0 auto 24px;max-width:440px;font-size:14px;color:var(--text-2);line-height:1.8}
 .land-prompt{font-size:14px;color:var(--text-3);margin:0 0 16px}
@@ -773,7 +772,7 @@ function progress(){
 function vLanding(){
   var resume="";
   if(hasDraft())resume='<div class="resume-card"><h4>'+T[L()].resumeT+'</h4><p>'+T[L()].resumeB+'</p><div class="row"><button class="cta" data-action="resume"><span>'+T[L()].resume+'</span></button><button class="ghost" data-action="fresh">'+T[L()].fresh+'</button></div></div>';
-  return topbar("form")+'<div class="wrap"><div class="land"><h1 class="land-title typing" id="land-greet"></h1><p class="land-intro-line" id="land-intro"></p><p style="font-size:12px;color:var(--text-3);margin:0 0 22px">'+T[L()].timeEst+'</p>'+resume+'<p class="land-prompt">'+T[L()].langPrompt+'</p><div class="langrow"><button class="cta" data-action="lang" data-lang="ar">العربية</button><button class="cta ghostcta" data-action="lang" data-lang="en">English</button></div><p style="font-size:12px;color:var(--text-3);margin-top:22px;line-height:1.7">'+T[L()].privacy+'</p><p class="land-foot">'+T[L()].foot+'</p></div></div>';
+  return topbar("form")+'<div class="wrap"><div class="land"><h1 class="land-title typing" id="land-greet"></h1><p style="font-size:12px;color:var(--text-3);margin:0 0 22px">'+T[L()].timeEst+'</p>'+resume+'<p class="land-prompt">'+T[L()].langPrompt+'</p><div class="langrow"><button class="cta" data-action="lang" data-lang="ar">العربية</button><button class="cta ghostcta" data-action="lang" data-lang="en">English</button></div><p style="font-size:12px;color:var(--text-3);margin-top:22px;line-height:1.7">'+T[L()].privacy+'</p><p class="land-foot">'+T[L()].foot+'</p></div></div>';
 }
 
 function vStage(){
@@ -992,20 +991,34 @@ function runLandingTypewriter(seq){
   var ar=state.lang==="ar";
   var greet=ar?"أهلاً بك":"Welcome";
   var intro=ar?"لنبدأ معاً رحلة اكتشاف علامتك":"Let's discover your brand together";
-  function type(id,text,speed,done){
-    var el=document.getElementById(id);
-    if(el)el.classList.add("typing");
+  function g(){return document.getElementById("land-greet");}
+  function type(text,speed,done){
     var i=0;
     (function tick(){
       if(_typerSeq!==seq)return;
-      var el2=document.getElementById(id);
-      if(!el2)return;
-      el2.textContent=text.slice(0,i);
+      var el=g();if(!el)return;
+      el.textContent=text.slice(0,i);
       if(i<text.length){i++;setTimeout(tick,speed);}
-      else{el2.classList.remove("typing");if(done)setTimeout(done,320);}
+      else if(done)setTimeout(done,600);
     })();
   }
-  type("land-greet",greet,70,function(){type("land-intro",intro,42,null);});
+  function erase(speed,done){
+    (function tick(){
+      if(_typerSeq!==seq)return;
+      var el=g();if(!el)return;
+      var t=el.textContent;
+      if(t.length){el.textContent=t.slice(0,-1);setTimeout(tick,speed);}
+      else if(done)setTimeout(done,180);
+    })();
+  }
+  var el=g();if(el)el.classList.add("typing");
+  type(greet,72,function(){
+    erase(38,function(){
+      type(intro,52,function(){
+        var el2=g();if(el2)el2.classList.remove("typing");
+      });
+    });
+  });
 }
 
 /* ── render ────────────────────────────────────────────────────── */
