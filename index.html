@@ -82,6 +82,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .dot{width:6px;height:6px;border-radius:999px;background:var(--accent);flex:0 0 auto}
 .qblock{padding:16px 0;border-top:1px solid var(--border)}
 .qblock:first-of-type{border-top:none;padding-top:2px}
+.contact-subh{padding:20px 0 4px;font-family:var(--font-display);font-size:12px;font-weight:600;color:var(--text-2)}
 .q{margin:0;font-family:var(--font-display);font-weight:300;font-size:1.25rem;line-height:1.5;color:var(--text)}
 .req{color:var(--cool);font-weight:500}
 .qmark{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);font-size:14px;font-weight:500;cursor:pointer;margin-inline-start:8px;position:relative;vertical-align:middle;line-height:1;padding:0}
@@ -379,11 +380,13 @@ var STAGES=[
     options:O([["١–١٠","1–10"],["١١–٥٠","11–50"],["٥١–٢٠٠","51–200"],["أكثر من ٢٠٠","200+"]])},
    {id:"s1_website",type:"url",
     q:{ar:"الموقع الإلكتروني",en:"Website"}},
+   {id:"sh_contact",type:"subheading",
+    q:{ar:"بيانات التواصل لهذا المشروع",en:"Contact details for this project"}},
    {id:"s1_social",type:"multiadd",
-    q:{ar:"حسابات التواصل الاجتماعي",en:"Social media"},
+    q:{ar:"حسابات التواصل الاجتماعي",en:"Social accounts"},
     placeholder:{ar:"رابط أو اسم الحساب",en:"Link or handle"}},
    {id:"s1_email",type:"email",
-    q:{ar:"البريد الإلكتروني الخاص بالمشروع",en:"Project email"}},
+    q:{ar:"البريد الإلكتروني",en:"Email"}},
    {id:"s1_phone",type:"phone",
     q:{ar:"رقم الهاتف",en:"Phone"}},
    {id:"s1_address",type:"text",
@@ -706,6 +709,7 @@ function vStage(){
   }
   var errs=state.errors||{};
   var qs=st.questions.map(function(q){
+    if(q.type==="subheading") return '<div class="contact-subh">'+q.q[L()]+'</div>';
     var hasErr=!!errs[q.id];
     var errHint=hasErr?'<p class="err-msg" role="alert">'+T[L()].errRequired+'</p>':'';
     return '<div class="qblock'+(hasErr?' erred':'')+'"><h3 class="q" id="ql-'+q.id+'">'+q.q[L()]+(q.required?' <span class="req">*</span>':'')+(q.help?qmark(q):'')+'</h3>'+(q.intro?'<p class="scaffold">'+q.intro[L()]+'</p>':'')+(q.help?helpPanel(q):'')+ctrl(q)+errHint+'</div>';
@@ -765,6 +769,7 @@ function vDetail(){
   var gap='<div class="gap"><div class="gapcol"><div class="h">'+T[lg].cur+'</div>'+adjList("s5_current","")+'</div><div class="gapcol"><div class="h">'+T[lg].des+'</div>'+adjList("s5_desired","d")+'</div></div>';
   var groups=snap.map(function(st){
     var rows=st.questions.map(function(q){
+      if(q.type==="subheading")return "";
       if(q.id==="s5_current"||q.id==="s5_desired")return "";
       var g=q.golden||GOLDEN[q.id];
       var val=s.answers[q.id];
