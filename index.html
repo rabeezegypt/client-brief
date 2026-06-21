@@ -239,14 +239,22 @@ textarea.inp{min-height:84px}
 .stat{flex:1;min-width:140px;border:1px solid var(--border);background:var(--surface);border-radius:var(--r);padding:16px}
 .stat .n{font-family:var(--font-display);font-weight:700;font-size:2rem;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
 .stat .l{font-size:12px;color:var(--text-2);margin-top:2px}
-.subcard{display:flex;align-items:center;gap:16px;border:1px solid var(--border);background:var(--surface);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:border-color .2s}
+.subcard{display:flex;align-items:center;gap:16px;border:1px solid var(--border);background:var(--surface);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:border-color .2s;flex-wrap:wrap}
 .subcard:hover{border-color:var(--text-2)}
 .subinfo{flex:1;min-width:0}
 .subname{font-family:var(--font-display);font-weight:500;font-size:16px;color:var(--text)}
 .submeta{font-size:12px;color:var(--text-2);margin-top:4px}
+.subbtns{display:flex;gap:8px;flex-wrap:wrap}
+.tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.tab{display:inline-flex;align-items:center;gap:8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-3);font-size:14px;font-weight:500;font-family:inherit;padding:10px 6px;margin-bottom:-1px;cursor:pointer;transition:color .2s,border-color .2s}
+.tab:hover{color:var(--text-2)}
+.tab.on{color:var(--text);border-bottom-color:var(--accent)}
+.tabn{font-size:11px;background:var(--surface-2);color:var(--text-2);border-radius:999px;padding:1px 8px;font-variant-numeric:tabular-nums}
+.tab.on .tabn{background:rgba(10,87,255,.14);color:var(--cool)}
 .pill{font-size:12px;padding:4px 12px;border-radius:999px;white-space:nowrap}
 .pnew{color:var(--cool);background:rgba(10,87,255,.14);border:1px solid rgba(10,87,255,.28)}
 .prev2{color:var(--text-2);background:var(--surface-2);border:1px solid var(--border)}
+.parch{color:var(--text-3);background:transparent;border:1px dashed var(--border)}
 .empty{border:1px dashed var(--border);border-radius:var(--r);padding:40px;text-align:center;color:var(--text-3);font-size:14px}
 /* dashboard — brief detail */
 .detail-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
@@ -349,7 +357,9 @@ var IC={
   sun:'<svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
   moon:'<svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>',
   dl:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M5 21h14"/></svg>',
-  print:'<svg class="ic" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="6" y="13" width="12" height="8"/><path d="M6 17H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg>'
+  print:'<svg class="ic" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="6" y="13" width="12" height="8"/><path d="M6 17H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2"/></svg>',
+  archive:'<svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>',
+  restore:'<svg class="ic" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="4" rx="1"/><path d="M4 7v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7"/><path d="M12 18v-7M9 14l3-3 3 3"/></svg>'
 };
 
 /* ── translations ───────────────────────────────────────────────── */
@@ -568,7 +578,7 @@ function totalStages(){return allStages().length;}
 function currentStageData(){return allStages()[state.stage-1];}
 
 /* ── state ─────────────────────────────────────────────────────── */
-var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:"",spOpen:""};
+var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:"",spOpen:"",adminTab:"active"};
 var _lastFocusedStage=0;
 var answers={};
 
@@ -816,11 +826,27 @@ function vLogin(){
 
 function vAdmin(){
   if(state.subs===null)return topbar("admin")+'<div class="wrapw" style="text-align:center;padding:60px 16px"><div class="spin"></div></div>';
-  var subs=state.subs,nw=subs.filter(function(s){return s.status==="new";}).length;
-  var list=subs.length?subs.map(function(s){
-    return '<div class="subcard"><div class="subinfo"><div class="subname">'+esc(s.brand)+'</div><div class="submeta">'+fmtDate(s.date||s.created_at)+'</div></div><span class="pill '+(s.status==="new"?"pnew":"prev2")+'">'+(s.status==="new"?(L()==="ar"?"جديد":"New"):(L()==="ar"?"تمت المراجعة":"Reviewed"))+'</span><button class="ghost sm" data-action="viewSub" data-id="'+s.id+'">'+IC.eye+'<span>'+(L()==="ar"?"عرض":"Open")+'</span></button></div>';
-  }).join(""):'<div class="empty">'+T[L()].noSubs+'</div>';
-  return topbar("admin")+'<div class="wrapw"><div style="display:flex;justify-content:flex-end;margin-bottom:16px"><button class="ghost sm" data-action="logout">'+T[L()].logout+'</button></div><div class="stats"><div class="stat"><div class="n">'+subs.length+'</div><div class="l">'+(L()==="ar"?"إجمالي النماذج":"Total")+'</div></div><div class="stat"><div class="n">'+nw+'</div><div class="l">'+(L()==="ar"?"جديدة":"New")+'</div></div></div>'+list+'</div>';
+  var ar=L()==="ar",subs=state.subs;
+  var active=subs.filter(function(s){return s.status!=="archived";});
+  var archived=subs.filter(function(s){return s.status==="archived";});
+  var nw=active.filter(function(s){return s.status==="new";}).length;
+  var tab=(state.adminTab==="archive")?"archive":"active";
+  var shown=(tab==="archive")?archived:active;
+  var tabs='<div class="tabs">'
+    +'<button class="tab'+(tab==="active"?" on":"")+'" data-action="adminTab" data-tab="active">'+(ar?"النشطة":"Active")+'<span class="tabn">'+active.length+'</span></button>'
+    +'<button class="tab'+(tab==="archive"?" on":"")+'" data-action="adminTab" data-tab="archive">'+(ar?"الأرشيف":"Archive")+'<span class="tabn">'+archived.length+'</span></button>'
+  +'</div>';
+  var list=shown.length?shown.map(function(s){
+    var isArch=s.status==="archived";
+    var pill=isArch
+      ?'<span class="pill parch">'+(ar?"مؤرشف":"Archived")+'</span>'
+      :'<span class="pill '+(s.status==="new"?"pnew":"prev2")+'">'+(s.status==="new"?(ar?"جديد":"New"):(ar?"تمت المراجعة":"Reviewed"))+'</span>';
+    var actBtn=isArch
+      ?'<button class="ghost sm" data-action="restoreSub" data-id="'+s.id+'">'+IC.restore+'<span>'+(ar?"استعادة":"Restore")+'</span></button>'
+      :'<button class="ghost sm" data-action="archiveSub" data-id="'+s.id+'">'+IC.archive+'<span>'+(ar?"أرشفة":"Archive")+'</span></button>';
+    return '<div class="subcard"><div class="subinfo"><div class="subname">'+esc(s.brand)+'</div><div class="submeta">'+fmtDate(s.date||s.created_at)+'</div></div>'+pill+'<div class="subbtns"><button class="ghost sm" data-action="viewSub" data-id="'+s.id+'">'+IC.eye+'<span>'+(ar?"عرض":"Open")+'</span></button>'+actBtn+'</div></div>';
+  }).join(""):'<div class="empty">'+(tab==="archive"?(ar?"لا توجد عناصر في الأرشيف.":"The archive is empty."):T[L()].noSubs)+'</div>';
+  return topbar("admin")+'<div class="wrapw"><div style="display:flex;justify-content:flex-end;margin-bottom:16px"><button class="ghost sm" data-action="logout">'+T[L()].logout+'</button></div><div class="stats"><div class="stat"><div class="n">'+active.length+'</div><div class="l">'+(ar?"النماذج النشطة":"Active")+'</div></div><div class="stat"><div class="n">'+nw+'</div><div class="l">'+(ar?"جديدة":"New")+'</div></div><div class="stat"><div class="n">'+archived.length+'</div><div class="l">'+(ar?"مؤرشفة":"Archived")+'</div></div></div>'+tabs+list+'</div>';
 }
 
 function findSub(id){var ss=state.subs||[];for(var i=0;i<ss.length;i++)if(ss[i].id===id)return ss[i];return null;}
@@ -879,8 +905,14 @@ function vDetail(){
   }).filter(Boolean).join("");
   var contactCard=contactRows?'<div class="contact-card">'+contactRows+'</div>':"";
 
-  var statusPill='<span class="pill '+(s.status==="new"?"pnew":"prev2")+'">'+(s.status==="new"?(ar?"جديد":"New"):(ar?"تمت المراجعة":"Reviewed"))+'</span>';
-  var bar='<div class="detail-bar"><button class="ghost sm" data-action="backList">'+ni("prev")+'<span>'+(ar?"رجوع":"Back")+'</span></button><div class="detail-actions"><button class="ghost sm" data-action="printSub">'+IC.print+'<span>'+(ar?"طباعة / PDF":"Print / PDF")+'</span></button><button class="cta sm" data-action="dlWord">'+IC.dl+'<span>'+(ar?"تحميل Word":"Download Word")+'</span></button></div></div>';
+  var isArch=s.status==="archived";
+  var statusPill=isArch
+    ?'<span class="pill parch">'+(ar?"مؤرشف":"Archived")+'</span>'
+    :'<span class="pill '+(s.status==="new"?"pnew":"prev2")+'">'+(s.status==="new"?(ar?"جديد":"New"):(ar?"تمت المراجعة":"Reviewed"))+'</span>';
+  var archBtn=isArch
+    ?'<button class="ghost sm" data-action="restoreSub" data-id="'+s.id+'">'+IC.restore+'<span>'+(ar?"استعادة":"Restore")+'</span></button>'
+    :'<button class="ghost sm" data-action="archiveSub" data-id="'+s.id+'">'+IC.archive+'<span>'+(ar?"أرشفة":"Archive")+'</span></button>';
+  var bar='<div class="detail-bar"><button class="ghost sm" data-action="backList">'+ni("prev")+'<span>'+(ar?"رجوع":"Back")+'</span></button><div class="detail-actions">'+archBtn+'<button class="ghost sm" data-action="printSub">'+IC.print+'<span>'+(ar?"طباعة / PDF":"Print / PDF")+'</span></button><button class="cta sm" data-action="dlWord">'+IC.dl+'<span>'+(ar?"تحميل Word":"Download Word")+'</span></button></div></div>';
   var cover='<div class="bcover"><div class="bcover-eyebrow"><span class="dot"></span><span>'+(ar?"موجز اكتشاف العلامة":"Brand Discovery Brief")+'</span></div><h2 class="bcover-brand">'+esc(s.brand)+'</h2>'+subline+'<div class="bcover-meta">'+fmtDate(s.date||s.created_at)+' <span class="bdot">·</span> '+(ar?"العربية":"English")+' <span class="bdot">·</span> '+statusPill+'</div></div>';
 
   return topbar("admin")+'<div class="wrapw">'+bar+'<div class="brief" dir="'+dir+'">'+cover+contactCard+sections+'</div></div>';
@@ -1206,6 +1238,15 @@ async function fetchSubs(){
   }catch(e){state.subs=[];}
   render();
 }
+/* Move a submission to / out of the archive. Optimistic: update locally, then
+   persist via update-status (reused; accepts any status). */
+function setSubStatus(id,status){
+  var subs=state.subs||[];
+  for(var i=0;i<subs.length;i++)if(subs[i].id===id)subs[i].status=status;
+  fetch('/api/update-status',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id,status:status})}).catch(function(){});
+  if(state.view==="adminDetail"){state.view="admin";state.adminTab=(status==="archived")?"archive":"active";}
+  render();
+}
 
 /* ── events ────────────────────────────────────────────────────── */
 var app=document.getElementById("app");
@@ -1256,6 +1297,9 @@ app.addEventListener("click",function(e){
   else if(act==="backList"){state.view="admin";state.subs=null;fetchSubs();render();window.scrollTo(0,0);}
   else if(act==="dlWord"){downloadWord(state.curSub);}
   else if(act==="printSub"){printSub(state.curSub);}
+  else if(act==="adminTab"){state.adminTab=t.getAttribute("data-tab");render();}
+  else if(act==="archiveSub"){setSubStatus(t.getAttribute("data-id"),"archived");}
+  else if(act==="restoreSub"){setSubStatus(t.getAttribute("data-id"),"reviewed");}
   else if(act==="restart"){clearDraft();answers={};state.stage=1;state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="doLogin"){
     var u=document.getElementById("lu"),p2=document.getElementById("lp");
