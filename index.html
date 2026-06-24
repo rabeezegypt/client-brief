@@ -233,6 +233,9 @@ textarea.inp{min-height:84px}
 /* spinner */
 .spin{display:inline-block;width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.btn-spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px}
+.cta[disabled]{opacity:.7;cursor:default;pointer-events:none;transform:none}
+.ghost[disabled]{opacity:.5;cursor:default;pointer-events:none}
 
 /* admin */
 .stats{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
@@ -578,7 +581,7 @@ function totalStages(){return allStages().length;}
 function currentStageData(){return allStages()[state.stage-1];}
 
 /* ── state ─────────────────────────────────────────────────────── */
-var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:"",spOpen:"",adminTab:"active"};
+var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:"",spOpen:"",adminTab:"active",submitting:false};
 var _lastFocusedStage=0;
 var answers={};
 
@@ -804,9 +807,13 @@ function vStage(){
   }).join("");
   var last=state.stage===totalStages();
   var submitErrHtml=state.submitErr?'<p class="submit-err" role="alert">'+esc(state.submitErr)+'</p>':'';
+  var sbusy=state.submitting;
+  var submitBtn=sbusy
+    ?'<button class="cta" data-action="submit" disabled aria-busy="true"><span class="btn-spin"></span><span>'+(L()==="ar"?"جارٍ الإرسال…":"Submitting…")+'</span></button>'
+    :'<button class="cta" data-action="submit"><span>'+T[L()].submit+'</span>'+IC.check+'</button>';
   var nav='<div class="nav">'
-    +(state.stage>1?'<button class="ghost" data-action="prev">'+ni("prev")+'<span>'+T[L()].prev+'</span></button>':'<span></span>')
-    +(last?'<button class="cta" data-action="submit"><span>'+T[L()].submit+'</span>'+IC.check+'</button>':'<button class="cta" data-action="next"><span>'+T[L()].next+'</span>'+ni("next")+'</button>')
+    +(state.stage>1?'<button class="ghost" data-action="prev"'+(sbusy?' disabled':'')+'>'+ni("prev")+'<span>'+T[L()].prev+'</span></button>':'<span></span>')
+    +(last?submitBtn:'<button class="cta" data-action="next"><span>'+T[L()].next+'</span>'+ni("next")+'</button>')
   +'</div>';
   return topbar("form")+'<div class="wrap">'+progress()+'<div class="card"><div class="cardbody"><div class="eyebrow" tabindex="-1" id="stage-heading"><span class="dot"></span><span>'+st.title[L()]+'</span></div>'+qs+submitErrHtml+nav+'</div></div><p class="savenote">'+T[L()].saved+'</p></div>';
 }
@@ -1214,6 +1221,8 @@ function toggleOpt(qid,raw){
 
 /* ── submit ────────────────────────────────────────────────────── */
 async function doSubmit(){
+  if(state.submitting)return;            // guard against double submission
+  state.submitting=true;state.submitErr="";render();
   var name=(typeof answers.s1_name==="string"&&answers.s1_name.trim())?answers.s1_name.trim():"—";
   var ok=false,detail="";
   try{
@@ -1221,6 +1230,7 @@ async function doSubmit(){
     ok=r.ok;
     if(!ok){try{detail=(await r.json()).detail||"";}catch(e){}}
   }catch(e){detail=String(e);}
+  state.submitting=false;
   if(!ok){
     state.submitErr=(L()==="ar"?"تعذّر حفظ النموذج، حاول مرة أخرى":"Could not save the form, please try again")+(detail?" — "+detail:"");
     render();return;
@@ -1286,7 +1296,7 @@ app.addEventListener("click",function(e){
     var ar2=Array.isArray(answers[qd])?answers[qd].slice():[];
     ar2.splice(di,1);if(!ar2.length)ar2=[bk2];answers[qd]=ar2;saveDraft();render();
   }
-  else if(act==="submit"){var errs2=validate();if(Object.keys(errs2).length){state.errors=errs2;render();return;}state.errors={};doSubmit();}
+  else if(act==="submit"){if(state.submitting)return;var errs2=validate();if(Object.keys(errs2).length){state.errors=errs2;render();return;}state.errors={};doSubmit();}
   else if(act==="goAdmin"){
     if(isAuth()){state.view="admin";state.subs=null;fetchSubs();}else{state.loginErr="";state.view="login";}
     render();window.scrollTo(0,0);
