@@ -953,19 +953,39 @@ function buildWordHtml(s){
   var logo=LOGO_PRINT[ar?"ar":"en"];
 
   /* ── cover ── */
-  var subBits=[itemsFor("s1_activity").join("، "),itemsFor("s1_year").join(""),itemsFor("s1_team").join("")].filter(Boolean);
+  function toLatinNums(str){return String(str).replace(/[٠١٢٣٤٥٦٧٨٩]/g,function(c){return c.charCodeAt(0)-0x0660;});}
+  var act=itemsFor("s1_activity").join(ar?"، ":", ");
+  var yr=toLatinNums(itemsFor("s1_year").join(""));
+  var team=toLatinNums(itemsFor("s1_team").join(ar?"، ":", "));
+  var L_filled=ar?"تمّ تعبئة هذا النموذج من قِبَل العميل مباشرةً":"This form was completed directly by the client";
+  var L_activity=ar?"المجال":"Industry";var L_year=ar?"سنة التأسيس":"Founded";var L_team=ar?"عدد الموظفين":"Team size";
+  var infoCells=[];
+  if(act)infoCells.push({label:L_activity,val:act});
+  if(yr)infoCells.push({label:L_year,val:yr});
+  if(team)infoCells.push({label:L_team,val:team});
+  function infoBox(){
+    if(!infoCells.length)return "";
+    var cells=infoCells.map(function(c,i){
+      var sep=(infoCells.length===3&&i===1)?';border-left:1px solid '+LINE+';border-right:1px solid '+LINE:'';
+      return '<td style="padding:10px 30px;text-align:center'+sep+'">'
+        +'<div style="color:'+MUT+';font-size:8.5pt;margin-bottom:4px">'+wEsc(c.label)+'</div>'
+        +'<div style="font-weight:bold;color:'+INK+';font-size:12pt">'+wEsc(c.val)+'</div>'
+        +'</td>';
+    }).join("");
+    return '<table style="margin:0 auto;border-collapse:collapse;background:#F5F8FF;border:1px solid '+LINE+'"><tr>'+cells+'</tr></table>';
+  }
   var cover=''
-    +'<div style="text-align:center;padding-top:150px">'
-    +(logo?'<img src="'+logo+'" style="height:54px;width:auto" alt="Rabeez"><div style="height:46px"></div>':'')
-    +'<div style="font-size:12pt;letter-spacing:3px;color:'+AC+';text-transform:uppercase;font-weight:bold">'+wEsc(L_brief)+'</div>'
-    +'<div style="height:26px"></div>'
-    +'<div style="font-size:34pt;font-weight:bold;color:'+INK+';line-height:1.15">'+wEsc(s.brand)+'</div>'
-    +(subBits.length?'<div style="height:14px"></div><div style="font-size:13pt;color:'+MUT+'">'+wEsc(subBits.join("  ·  "))+'</div>':'')
-    +'<div style="height:34px"></div>'
-    +'<div style="border-top:2px solid '+AC+';width:70px;margin:0 auto"></div>'
-    +'<div style="height:18px"></div>'
-    +'<div style="font-size:11pt;color:'+MUT+'">'+wEsc(wDate(s.date||s.created_at))+'&nbsp;&nbsp;·&nbsp;&nbsp;'+(ar?"العربية":"English")+'</div>'
-    +'<div style="height:8px"></div>'
+    +'<div style="text-align:center;padding-top:110px;padding-bottom:80px">'
+    +(logo?'<img src="'+logo+'" style="height:48px;width:auto" alt="Rabeez"><div style="height:50px"></div>':'')
+    +'<div style="font-size:11pt;color:'+AC+';font-weight:bold;margin-bottom:26px">'+wEsc(L_brief)+'</div>'
+    +'<div style="font-size:40pt;font-weight:bold;color:'+INK+';line-height:1.2;margin-bottom:34px">'+wEsc(s.brand)+'</div>'
+    +(infoCells.length?infoBox()+'<div style="height:42px"></div>':'<div style="height:10px"></div>')
+    +'<div style="border-top:2px solid '+AC+';width:56px;margin-left:auto;margin-right:auto"></div>'
+    +'<div style="height:22px"></div>'
+    +'<div style="font-size:10.5pt;font-weight:bold;color:'+INK+'">'+wEsc(L_filled)+'</div>'
+    +'<div style="height:16px"></div>'
+    +'<div style="font-size:10pt;color:'+MUT+'">'+wEsc(wDate(s.date||s.created_at))+'&nbsp;&nbsp;·&nbsp;&nbsp;'+(ar?"العربية":"English")+'</div>'
+    +'<div style="height:6px"></div>'
     +'<div style="font-size:10pt;color:'+MUT+'">'+wEsc(L_prep)+'</div>'
     +'</div>';
 
