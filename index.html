@@ -943,7 +943,7 @@ function buildWordHtml(s){
   function wVal(q){
     var items=answerItems(q,s.answers[q.id],lg);
     if(!items.length)return '<span style="color:'+MUT+'">—</span>';
-    if(q.type==="multi"||q.type==="scale"||q.adj)return items.map(wEsc).join('&nbsp;&nbsp;&middot;&nbsp;&nbsp;');
+    if(q.type==="multi"||q.type==="scale"||q.adj)return items.map(function(p){return '&#8226;&nbsp;'+wEsc(p);}).join('<br>');
     return items.map(function(p){return wEsc(p).replace(/\r?\n/g,"<br>");}).join("<br>");
   }
   var L_brief=ar?"موجز اكتشاف العلامة التجارية":"Brand Discovery Brief";
