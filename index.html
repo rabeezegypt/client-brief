@@ -389,12 +389,12 @@ var T={
     foot:"",
     adminLink:"لوحة التحكم",backForm:"العودة للاستبيان",adminTitle:"النماذج الواردة",
     noSubs:"لا توجد نماذج بعد.",cur:"العلامة اليوم",des:"العلامة المطلوبة",
-    adj:function(n){return "اخترت "+n+" — الموصى به ٣ إلى ٥";},
+    adj:function(n){return "اخترت "+n+" — الموصى به 3 إلى 5";},
     genPct:function(p){return "جارٍ التحليل… "+p+"%";},
     loginTitle:"الدخول للوحة التحكم",loginUser:"اسم المستخدم",loginPass:"كلمة المرور",loginBtn:"دخول",loginErr:"بيانات الدخول غير صحيحة.",
     logout:"خروج",
     errRequired:"هذا الحقل مطلوب",
-    timeEst:"يستغرق نحو ١٠ دقائق",
+    timeEst:"يستغرق نحو 10 دقائق",
     privacy:"معلوماتك سرّية وتُستخدم لإعداد دراسة علامتك فقط"},
   en:{appName:"Project Start",tag:"Brand discovery — rebrand track.",
     langPrompt:"Choose the form language",next:"Next",prev:"Back",submit:"Submit",
@@ -454,7 +454,7 @@ var STAGES=[
     q:{ar:"سنة التأسيس",en:"Year founded"}},
    {id:"s1_team",type:"scale",
     q:{ar:"عدد الموظفين",en:"Team size"},
-    options:O([["١–١٠","1–10"],["١١–٥٠","11–50"],["٥١–٢٠٠","51–200"],["أكثر من ٢٠٠","200+"]])},
+    options:O([["1–10","1–10"],["11–50","11–50"],["51–200","51–200"],["أكثر من 200","200+"]])},
    {id:"sh_contact",type:"subheading",
     q:{ar:"بيانات التواصل لهذا المشروع",en:"Contact details for this project"}},
    {id:"s1_website",type:"url",
@@ -481,7 +481,7 @@ var STAGES=[
  {title:{ar:"لماذا الآن؟",en:"Why now?"},questions:[
    {id:"s3_trigger",type:"multi",other:true,otherLabel:{ar:"سبب آخر",en:"Another reason"},
     q:{ar:"ما الذي دفعك إلى تطوير هوية علامتك التجارية الآن؟",en:"What made now the right time to rebrand?"},
-    help:{ex:{ar:"مطعم مضى على افتتاحه ٨ سنوات يشعر أن مظهره قديم أمام المنافسين الجدد.",
+    help:{ex:{ar:"مطعم مضى على افتتاحه 8 سنوات يشعر أن مظهره قديم أمام المنافسين الجدد.",
               en:"A restaurant open 8 years that feels dated next to newer competitors."},
           why:{ar:"الدافع الحقيقي وراء القرار يوجّه كل ما يلي.",en:"The real driver guides everything that follows."}},
     options:O([["أصبح مظهرنا الحالي قديمًا أو غير مواكب","Our look has become dated"],["تطوّرنا وكبرنا، ولم تعد الهوية تعبّر عنّا","We've grown and the brand no longer fits"],["ندخل سوقًا جديدة أو فئة عملاء جديدة","Entering a new market or audience"],["حدث اندماج أو تغيير في الملكية أو الإدارة","A merger or ownership/leadership change"],["هويتنا غير ثابتة أو غير متّسقة عبر القنوات","Our identity is inconsistent across channels"],["نرغب في تحسين صورتنا أو سمعتنا","We want to improve our image or reputation"]])},
@@ -500,7 +500,7 @@ var STAGES=[
    {id:"s4_age",type:"multi",other:true,otherLabel:{ar:"فئة أخرى",en:"Other"},
     q:{ar:"ما الفئة العمرية لجمهورك الأساسي؟",en:"Age range of your core audience?"},
     help:{why:{ar:"يساعدنا في تصميم لغة ومظهر يناسب من تخاطبهم فعلًا.",en:"Helps us design a tone and look that fits who you actually speak to."}},
-    options:O([["تحت ١٨","Under 18"],["١٨–٢٤","18–24"],["٢٥–٣٤","25–34"],["٣٥–٤٤","35–44"],["٤٥–٦٠","45–60"],["فوق ٦٠","60+"]])},
+    options:O([["تحت 18","Under 18"],["18–24","18–24"],["25–34","25–34"],["35–44","35–44"],["45–60","45–60"],["فوق 60","60+"]])},
    {id:"s4_gender",type:"multi",
     q:{ar:"ما النوع الغالب على جمهورك؟",en:"Predominant gender of your audience?"},
     options:O([["رجال","Men"],["نساء","Women"],["كلاهما","Both"]])},
@@ -509,7 +509,7 @@ var STAGES=[
     options:O([["محدود","Limited"],["متوسط","Middle"],["مرتفع","High"],["فاخر","Luxury"]])},
    {id:"s4_competitors",type:"multipair",
     pair:{a:{ar:"اسم المنافس",en:"Competitor name"},b:{ar:"الموقع أو صفحة التواصل",en:"Website or social link"}},
-    q:{ar:"اذكر من ٣ إلى ٥ من أبرز منافسيك.",en:"List 3–5 of your main competitors."},
+    q:{ar:"اذكر من 3 إلى 5 من أبرز منافسيك.",en:"List 3–5 of your main competitors."},
     help:{why:{ar:"دراسة المنافسين تُحدّد الفجوات في السوق وتضمن أن تخرج هويتك مختلفة ومميّزة.",en:"Competitor research reveals market gaps and ensures your new identity is genuinely differentiated."}}},
    {id:"s4_diff",type:"suggest",
     q:{ar:"ما الذي يميّزك فعلًا عن منافسيك؟",en:"What truly sets you apart from competitors?"},
@@ -526,10 +526,10 @@ var STAGES=[
  ]},
  {title:{ar:"الفجوة",en:"The gap"},questions:[
    {id:"s5_current",type:"multi",adj:true,limit:[3,5],other:true,otherLabel:{ar:"صفة أخرى",en:"Another word"},options:ADJ,
-    q:{ar:"اختر من ٣ إلى ٥ صفات تصف علامتك اليوم.",en:"Pick 3–5 words that describe your brand today."},
+    q:{ar:"اختر من 3 إلى 5 صفات تصف علامتك اليوم.",en:"Pick 3–5 words that describe your brand today."},
     help:{why:{ar:"الفرق بين هذه الصفات والصفات المرغوبة هو الفجوة الاستراتيجية التي نعمل على سدّها.",en:"The difference between these and the desired words is the strategic gap we work to close."}}},
    {id:"s5_desired",type:"multi",adj:true,limit:[3,5],other:true,otherLabel:{ar:"صفة أخرى",en:"Another word"},options:ADJ,
-    q:{ar:"اختر من ٣ إلى ٥ صفات تريد أن تصبح علامتك عليها.",en:"Pick 3–5 words you want your brand to become."}},
+    q:{ar:"اختر من 3 إلى 5 صفات تريد أن تصبح علامتك عليها.",en:"Pick 3–5 words you want your brand to become."}},
    {id:"s5_challenge",type:"textarea",
     q:{ar:"ما أكبر تحدٍّ داخلي يواجهك في هذا التحوّل؟",en:"Your biggest internal challenge in this shift?"},
     placeholder:{ar:"مثال: تخوّف العائلة المؤسِّسة من فقدان الطابع التراثي.",en:"e.g. The founding family's fear of losing the heritage feel."}},
@@ -608,14 +608,16 @@ function isAuth(){try{return localStorage.getItem(LS_AUTH)==="1";}catch(e){retur
 function setAuth(v){try{localStorage.setItem(LS_AUTH,v?"1":"");}catch(e){}}
 
 /* ── helpers ───────────────────────────────────────────────────── */
-function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+/* Global rule: render every digit as Latin 0-9 across the platform. */
+function toLatin(s){return String(s==null?"":s).replace(/[٠-٩۰-۹]/g,function(c){return String.fromCharCode((c.charCodeAt(0)&0x000F)+48);});}
+function esc(s){return toLatin(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 function ea(s){return esc(s);}
 function findQ(id){var all=allStages();for(var i=0;i<all.length;i++){for(var j=0;j<all[i].questions.length;j++){if(all[i].questions[j].id===id)return all[i].questions[j];}}return null;}
 function ans(id){var a=answers[id];if(a&&typeof a==="object"&&a.sel)return a;a={sel:[],extra:""};answers[id]=a;return a;}
 function L(){return state.lang;}
 function rtl(){return L()==="ar";}
 function ni(which){if(which==="next")return rtl()?IC.al:IC.ar;return rtl()?IC.ar:IC.al;}
-function fmtDate(iso){try{return new Date(iso).toLocaleDateString("ar-EG",{year:"numeric",month:"short",day:"numeric"});}catch(e){return iso;}}
+function fmtDate(iso){try{return toLatin(new Date(iso).toLocaleDateString("ar-EG",{year:"numeric",month:"short",day:"numeric"}));}catch(e){return iso;}}
 function ph(q){return q.placeholder?ea(q.placeholder[L()]):""}
 
 /* Plain-text answer items (no HTML) — shared by the dashboard view and the Word
@@ -931,7 +933,7 @@ function vDetail(){
 }
 
 /* ── Word / print export ───────────────────────────────────────── */
-function wEsc(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function wEsc(v){return toLatin(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function buildWordHtml(s){
   var lg=s.lang||"ar",ar=(lg==="ar"),dir=ar?"rtl":"ltr",al=ar?"right":"left";
   var snap=subSnap(s);
@@ -952,10 +954,9 @@ function buildWordHtml(s){
   var logo=LOGO_PRINT[ar?"ar":"en"];
 
   /* ── cover ── */
-  function toLatinNums(str){return String(str).replace(/[٠١٢٣٤٥٦٧٨٩]/g,function(c){return c.charCodeAt(0)-0x0660;});}
-  var act=itemsFor("s1_activity").join(ar?"، ":", ");
-  var yr=toLatinNums(itemsFor("s1_year").join(""));
-  var team=toLatinNums(itemsFor("s1_team").join(ar?"، ":", "));
+  var act=toLatin(itemsFor("s1_activity").join(ar?"، ":", "));
+  var yr=toLatin(itemsFor("s1_year").join(""));
+  var team=toLatin(itemsFor("s1_team").join(ar?"، ":", "));
   var L_filled=ar?"تمّ تعبئة هذا النموذج من قِبَل العميل مباشرةً":"This form was completed directly by the client";
   var L_activity=ar?"المجال":"Industry";var L_year=ar?"سنة التأسيس":"Founded";var L_team=ar?"عدد الموظفين":"Team size";
   var infoCells=[];
@@ -1055,6 +1056,22 @@ function applyDir(){
   document.documentElement.dir=(!isAdmin&&state.lang==="en")?"ltr":"rtl";
   document.documentElement.lang=isAdmin?"ar":state.lang;
 }
+/* Walk text nodes (and select attributes used by screen readers) and normalize
+   Arabic-Indic / Persian digits to Latin 0-9. Cheap — only rewrites nodes that
+   actually contain a non-Latin digit. */
+function normalizeDigitsInDom(root){
+  var rx=/[٠-٩۰-۹]/;
+  var sub=function(c){return String.fromCharCode((c.charCodeAt(0)&0x000F)+48);};
+  var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null,false);
+  var n;while((n=w.nextNode())){if(rx.test(n.nodeValue))n.nodeValue=n.nodeValue.replace(/[٠-٩۰-۹]/g,sub);}
+  var nodes=root.querySelectorAll("[aria-label],[title],[placeholder]");
+  for(var i=0;i<nodes.length;i++){
+    var el=nodes[i];
+    ["aria-label","title","placeholder"].forEach(function(a){
+      var v=el.getAttribute(a);if(v&&rx.test(v))el.setAttribute(a,v.replace(/[٠-٩۰-۹]/g,sub));
+    });
+  }
+}
 function render(){
   applyDir();
   var html;
@@ -1065,7 +1082,11 @@ function render(){
   else if(state.view==="login")html=vLogin();
   else if(state.view==="admin")html=vAdmin();
   else if(state.view==="adminDetail")html=vDetail();
-  document.getElementById("app").innerHTML=html;
+  var root=document.getElementById("app");
+  root.innerHTML=html;
+  /* Platform-wide rule: render every digit as Latin 0-9, regardless of source
+     (AI-generated questions, Intl date formatters, hardcoded copy). */
+  normalizeDigitsInDom(root);
   if(state.view==="form"&&state.stage!==_lastFocusedStage&&!Object.keys(state.errors||{}).length){
     _lastFocusedStage=state.stage;
     requestAnimationFrame(function(){var h=document.getElementById("stage-heading");if(h)h.focus({preventScroll:true});});
