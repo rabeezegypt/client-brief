@@ -57,7 +57,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adminlink{flex:0 0 auto}
 .topright{display:flex;align-items:center;gap:10px;flex:0 0 auto}
-.logo-img{height:30px;width:auto;display:block;filter:invert(var(--logo-invert))}
+.logo-img{height:30px;width:auto;display:block}
 .sep{width:1px;height:18px;background:var(--border)}
 .sub{font-family:var(--font-display);font-weight:500;font-size:15px;color:var(--text)}
 .adminlink{font-size:14px;font-weight:500;color:var(--text);background:#fff;border:none;border-radius:var(--pill);padding:11px 20px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:transform .25s,box-shadow .25s}
@@ -182,7 +182,7 @@ textarea.inp{min-height:96px}
 /* landing — editorial hero */
 .land{text-align:center;padding:64px 16px 32px}
 .land-logo{margin:0 auto 48px;display:flex;justify-content:center}
-.land-logo img{height:40px;width:auto;filter:invert(var(--logo-invert))}
+.land-logo img{height:40px;width:auto}
 .land-eyebrow{display:inline-flex;align-items:center;gap:10px;margin:0 auto 32px;font-size:14px;color:var(--text);font-weight:500}
 .land-eyebrow .dot{width:8px;height:8px;border-radius:var(--pill);background:var(--text)}
 .land-title{font-family:var(--font-display);font-weight:500;font-size:clamp(40px,6vw,64px);line-height:1.05;letter-spacing:-.02em;margin:0 0 28px;color:var(--text);max-width:780px;margin-left:auto;margin-right:auto}
@@ -217,7 +217,7 @@ html[lang="ar"] .thanks h1{font-weight:700;letter-spacing:0}
 /* login */
 .login{max-width:420px;margin:80px auto;padding:0 16px}
 .login-logo{display:flex;justify-content:center;margin-bottom:32px}
-.login-logo img{height:36px;filter:invert(var(--logo-invert))}
+.login-logo img{height:36px}
 .login-card{background:var(--surface);border-radius:var(--card-radius);padding:36px 32px}
 .login-card h2{font-family:var(--font-display);font-weight:500;font-size:1.4rem;line-height:1.3;margin:0 0 24px;text-align:center;display:flex;align-items:center;gap:10px;justify-content:center;letter-spacing:-.01em}
 html[lang="ar"] .login-card h2{font-weight:700;letter-spacing:0}
@@ -764,7 +764,7 @@ function helpPanel(q){
 
 /* ── chrome helpers ────────────────────────────────────────────── */
 function logoImg(size){
-  var src=LOGO[L()==="ar"?"ar":"en"];
+  var src=LOGO_PRINT[L()==="ar"?"ar":"en"];
   var h=size||32;
   return '<img class="logo-img" src="'+src+'" alt="Rabeez" style="height:'+h+'px;width:auto">';
 }
