@@ -82,12 +82,12 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .qblock{padding:24px 0;border-top:1px solid var(--border)}
 .qblock:first-of-type{border-top:none;padding-top:4px}
 .contact-subh{display:flex;align-items:center;gap:10px;padding:24px 0 4px;font-family:var(--font-display);font-size:13px;font-weight:500;color:var(--text);text-transform:uppercase;letter-spacing:.06em}
-.q{margin:0;font-family:var(--font-body);font-weight:500;font-size:1.25rem;line-height:1.5;color:var(--text);letter-spacing:0}
+.q{margin:0 0 4px;font-family:var(--font-body);font-weight:500;font-size:1.35rem;line-height:1.45;color:var(--text);letter-spacing:0}
 .req{color:var(--text-3);font-weight:300}
 .qmark{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--text-3);font-size:13px;font-weight:500;cursor:pointer;margin-inline-start:8px;vertical-align:middle;line-height:1;padding:0;transition:border-color .2s,color .2s}
 .qmark:hover{border-color:var(--text-2);color:var(--text)}
 .scaffold{margin:10px 0 0;font-size:14px;color:var(--text-3);line-height:1.7}
-.stage-intro{margin:-8px 0 24px;font-size:15px;color:var(--text-2);line-height:1.7}
+.stage-intro{margin:-12px 0 28px;font-size:14px;color:var(--text-3);line-height:1.7;font-weight:300;max-width:560px}
 
 /* collapsible help */
 .collapsible{overflow:hidden;max-height:600px;transition:max-height .25s ease}
@@ -98,11 +98,19 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .help-inner p+p{margin-top:8px}
 .help-inner b{color:var(--text);font-weight:500}
 
-/* options as pill toggle group */
+/* options — pill chips by default, full-width stacked when labels are long.
+   Hierarchy: unselected = Light 300, selected = Medium 500 — the weight bump
+   alone (plus the filled background) carries the "chosen" signal. */
 .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.opt{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border:1.5px solid var(--border-2);border-radius:var(--pill);background:transparent;cursor:pointer;font-size:15px;color:var(--text);font-weight:500;font-family:inherit;transition:background .2s,color .2s,border-color .2s}
-.opt:hover{border-color:var(--text)}
-.opt.sel{border-color:var(--text);background:var(--text);color:#fff}
+.opt{display:inline-flex;align-items:center;gap:10px;padding:11px 18px;border:1.5px solid var(--border);border-radius:var(--pill);background:#fff;cursor:pointer;font-size:15px;color:var(--text);font-weight:300;font-family:inherit;line-height:1.5;transition:background .2s,color .2s,border-color .2s,box-shadow .2s}
+.opt:hover{border-color:var(--text-2);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+.opt.sel{border-color:var(--text);background:var(--text);color:#fff;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.10)}
+/* Stacked variant — one option per row, used automatically when any label is
+   long enough that the pill wrap looks busy. */
+.opts.stack{flex-direction:column;align-items:stretch;gap:10px}
+.opts.stack .opt{justify-content:flex-start;border-radius:var(--r);padding:16px 22px;width:100%;text-align:start}
+.opts.stack .opt::before{content:"";flex:0 0 auto;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border-2);background:#fff;transition:border-color .2s,background .2s,box-shadow .2s}
+.opts.stack .opt.sel::before{border-color:#fff;background:#fff;box-shadow:inset 0 0 0 4px var(--text)}
 .box{display:none}
 .err-msg{font-size:13px;color:var(--err);margin-top:10px;display:flex;align-items:center;gap:4px}
 .qblock.erred .inp{border-color:var(--err)}
@@ -111,15 +119,15 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 
 /* scale */
 .scale{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
-.sopt{flex:1;min-width:80px;text-align:center;padding:12px 14px;border:1.5px solid var(--border-2);border-radius:var(--pill);background:transparent;cursor:pointer;font-size:14px;color:var(--text-2);font-weight:500;transition:background .2s,color .2s,border-color .2s}
-.sopt:hover{border-color:var(--text)}
-.sopt.sel{border-color:var(--text);background:var(--text);color:#fff}
+.sopt{flex:1;min-width:80px;text-align:center;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--pill);background:#fff;cursor:pointer;font-size:14px;color:var(--text-2);font-weight:300;transition:background .2s,color .2s,border-color .2s,box-shadow .2s}
+.sopt:hover{border-color:var(--text-2);color:var(--text)}
+.sopt.sel{border-color:var(--text);background:var(--text);color:#fff;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.10)}
 
 /* adjective pills */
 .adjwrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.adj{padding:10px 18px;border:1.5px solid var(--border-2);border-radius:var(--pill);background:transparent;cursor:pointer;font-size:14px;color:var(--text-2);font-weight:500;transition:background .2s,color .2s,border-color .2s}
-.adj:hover{border-color:var(--text)}
-.adj.sel{border-color:var(--text);background:var(--text);color:#fff}
+.adj{padding:10px 18px;border:1.5px solid var(--border);border-radius:var(--pill);background:#fff;cursor:pointer;font-size:14px;color:var(--text-2);font-weight:300;transition:background .2s,color .2s,border-color .2s,box-shadow .2s}
+.adj:hover{border-color:var(--text-2);color:var(--text)}
+.adj.sel{border-color:var(--text);background:var(--text);color:#fff;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.10)}
 .adjcount{margin-top:12px;font-size:13px;color:var(--text-3)}
 
 /* inputs */
@@ -806,9 +814,25 @@ function ctrl(q){
     html+='</div><div class="adjcount">'+T[L()].adj(a3.sel.length)+'</div>';
     if(q.other&&a3.sel.indexOf("other")>-1)html+='<input class="inp" data-q="'+id+'" data-field="extra" value="'+ea(a3.extra||"")+'" placeholder="'+ea(L()==="ar"?"اكتب صفة أخرى…":"Type another word…")+'">';
   } else {
-    html='<div class="opts" role="group">';
-    q.options.forEach(function(o,i){var sel=a3.sel.indexOf(i)>-1;html+='<div class="opt'+(sel?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(sel?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'"><span class="box" aria-hidden="true">'+IC.check+'</span><span>'+o[L()]+'</span></div>';});
-    if(q.other){var selO2=a3.sel.indexOf("other")>-1;html+='<div class="opt'+(selO2?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(selO2?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="other"><span class="box" aria-hidden="true">'+IC.check+'</span><span>'+otherTxt+'</span></div>';}
+    /* Auto-switch to the stacked layout when any label is long enough that
+       wrapped pills would look ragged. Catches Stage 2 chip questions and any
+       AI-generated stage with descriptive options, without manual flagging. */
+    var labelLen=function(o){return Math.max(String((o&&o.ar)||"").length, String((o&&o.en)||"").length);};
+    var maxLen=0;
+    for(var li=0;li<q.options.length;li++){var ll=labelLen(q.options[li]);if(ll>maxLen)maxLen=ll;}
+    var stack=q.single||maxLen>=22;
+    var role=q.single?"radiogroup":"group";
+    var itemRole=q.single?"radio":"checkbox";
+    var checkedAttr=q.single?"aria-checked":"aria-checked";
+    html='<div class="opts'+(stack?" stack":"")+'" role="'+role+'">';
+    q.options.forEach(function(o,i){
+      var sel=a3.sel.indexOf(i)>-1;
+      html+='<div class="opt'+(sel?" sel":"")+'" role="'+itemRole+'" tabindex="0" '+checkedAttr+'="'+(sel?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'"><span>'+o[L()]+'</span></div>';
+    });
+    if(q.other){
+      var selO2=a3.sel.indexOf("other")>-1;
+      html+='<div class="opt'+(selO2?" sel":"")+'" role="'+itemRole+'" tabindex="0" '+checkedAttr+'="'+(selO2?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="other"><span>'+otherTxt+'</span></div>';
+    }
     html+='</div>';
     if(q.other&&a3.sel.indexOf("other")>-1){
       var ml=q.maxOther?' maxlength="'+q.maxOther+'"':'';
