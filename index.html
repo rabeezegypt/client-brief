@@ -87,6 +87,7 @@ input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-
 .qmark{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--text-3);font-size:13px;font-weight:500;cursor:pointer;margin-inline-start:8px;vertical-align:middle;line-height:1;padding:0;transition:border-color .2s,color .2s}
 .qmark:hover{border-color:var(--text-2);color:var(--text)}
 .scaffold{margin:10px 0 0;font-size:14px;color:var(--text-3);line-height:1.7}
+.stage-intro{margin:-8px 0 24px;font-size:15px;color:var(--text-2);line-height:1.7}
 
 /* collapsible help */
 .collapsible{overflow:hidden;max-height:600px;transition:max-height .25s ease}
@@ -384,6 +385,7 @@ var T={
     eg:"مثال:",otherPh:"اكتب هنا…",fileHint:"اضغط لرفع ملف",saved:"يُحفَظ تلقائيًا",add:"+ أضف",
     resumeT:"لديك مسودة محفوظة",resumeB:"تريد المتابعة من حيث توقفت؟",resume:"متابعة",fresh:"البدء من جديد",
     genT:"جارٍ تحليل إجاباتك",genB:"سيستغرق هذا بضع ثوانٍ.",
+    gen2T:"نُحضّر اختياراتك السريعة",gen2B:"نقرأ بيانات الخطوة الأولى ونقترح اتجاهًا يناسب علامتك.",
     stageLoading:"نُجهّز أسئلة هذه المرحلة…",
     thanksT:"وصلنا نموذجك. شكرًا لك.",thanksB:"سيراجعه فريق ربيز ويعود إليك قريبًا.",thanksAgain:"إرسال نموذج آخر",
     foot:"",
@@ -401,6 +403,7 @@ var T={
     eg:"Example:",otherPh:"Type here…",fileHint:"Click to upload",saved:"Saved automatically",add:"+ Add",
     resumeT:"You have a saved draft",resumeB:"Continue where you left off?",resume:"Continue",fresh:"Start over",
     genT:"Analysing your answers",genB:"This will only take a moment.",
+    gen2T:"Preparing your quick choices",gen2B:"Reading your Stage 1 inputs to suggest a direction that fits your brand.",
     stageLoading:"Preparing this stage's questions…",
     thanksT:"We've received your form. Thank you.",thanksB:"The Rabeez team will review it and get back to you soon.",thanksAgain:"Submit another",
     foot:"",
@@ -468,15 +471,61 @@ var STAGES=[
    {id:"s1_address",type:"text",
     q:{ar:"العنوان الوطني",en:"National address"}}
  ]},
- {title:{ar:"بأسلوبك أنت",en:"In your words"},questions:[
-   {id:"s2_desc",type:"textarea",required:true,
-    q:{ar:"احكِ لنا عن علامتك بأسلوبك",en:"Tell us about your brand, in your own words"},
-    intro:{ar:"لا توجد إجابة مثالية — اكتب بعفوية. أمثلة لما يمكن ذكره: ماذا تقدّم ولمن؟ بمَ تفخر؟ وما الذي تشعر أنه لم يعد يمثّلك؟",
-           en:"No perfect answer — write naturally. You might mention: what you offer and to whom, what you're proud of, and what no longer represents you."},
-    help:{why:{ar:"كلماتك أصدق مادة للتحليل، وتوجّه بقية أسئلة هذا الاستبيان.",
-               en:"Your own words are the truest material for analysis, and they shape the rest of this form."}},
-    placeholder:{ar:"اكتب بحرّية — ما الذي تقدّمه، ولمن، وما الذي تشعر أنه لم يعد يمثّلك؟",
-                 en:"Write freely — what do you offer, for whom, and what no longer feels like you?"}}
+ /* Stage 2 — Direction Seed.
+    The runtime swaps this fallback for an AI-generated version produced from
+    Stage 1 inputs (see STAGE2_DYNAMIC + genStage2). This static fallback only
+    appears when /api/generate fails on the direction-seed call. */
+ {title:{ar:"اتجاه الريبراند",en:"Rebrand direction"},
+  intro:{ar:"اختر الأقرب لوضع علامتك. لا نحتاج تفاصيل الآن، سنستخدم إجاباتك لبناء أسئلة أدق في المراحل التالية.",
+         en:"Pick what's closest to your brand's situation. No detail needed yet — we'll use these to shape sharper questions next."},
+  questions:[
+   {id:"s2_rebrand_trigger",type:"multi",required:true,other:true,maxOther:80,
+    otherLabel:{ar:"سبب آخر",en:"Another reason"},
+    q:{ar:"ما السبب الأقرب للتفكير في الريبراند؟",en:"What's the closest reason you're considering a rebrand?"},
+    options:O([
+      ["الهوية لم تعد تعكس واقعنا","Our identity no longer reflects who we are"],
+      ["نريد ظهورًا أكثر احترافية","We want a more professional presence"],
+      ["نحتاج توحيد الشكل عبر القنوات","We need consistency across channels"],
+      ["ندخل مرحلة نمو أو سوقًا جديدة","Entering a growth phase or a new market"],
+      ["نسعى لتمييز أوضح في السوق","Seeking clearer differentiation"],
+      ["نريد تجديد الانطباع لدى الجمهور","Refreshing audience impression"],
+      ["غير متأكد","Not sure"]
+    ])},
+   {id:"s2_change_scope",type:"multi",single:true,required:true,other:true,maxOther:80,
+    otherLabel:{ar:"شيء آخر",en:"Something else"},
+    q:{ar:"ما نوع التغيير الأقرب لما تتخيله؟",en:"What kind of change do you have in mind?"},
+    options:O([
+      ["تحسين بسيط للشكل الحالي","A light polish of what we have"],
+      ["تطوير واضح مع الحفاظ على الجوهر","A clear evolution while keeping the core"],
+      ["تغيير شامل وإعادة بناء","A full reinvention"],
+      ["بناء نظام أكثر اتساقًا","Building a more consistent system"],
+      ["نستكشف الاتجاه الأنسب","We're exploring the right direction"],
+      ["غير متأكد","Not sure"]
+    ])},
+   {id:"s2_perception_shift",type:"multi",single:true,required:true,other:true,maxOther:80,
+    otherLabel:{ar:"انتقال آخر",en:"Another shift"},
+    q:{ar:"أي انتقال أقرب لما تريده؟",en:"Which transition resonates most?"},
+    options:O([
+      ["من تقليدي إلى عصري","From traditional to modern"],
+      ["من بسيط إلى أكثر احترافية","From simple to more professional"],
+      ["من غامض إلى واضح","From unclear to clear"],
+      ["من محلي إلى إقليمي","From local to regional"],
+      ["من متخصص إلى أوسع","From niche to broader"],
+      ["من جامد إلى أكثر دفئًا","From rigid to warmer"],
+      ["غير متأكد","Not sure"]
+    ])},
+   {id:"s2_main_priority",type:"multi",single:true,required:true,other:true,maxOther:80,
+    otherLabel:{ar:"أولوية أخرى",en:"Another priority"},
+    q:{ar:"ما الأولوية الأكبر من الريبراند؟",en:"What's your top priority from this rebrand?"},
+    options:O([
+      ["بناء الثقة","Building trust"],
+      ["وضوح الرسالة","Message clarity"],
+      ["انطباع أول قوي","A strong first impression"],
+      ["دعم النمو","Supporting growth"],
+      ["اتساق عبر القنوات","Cross-channel consistency"],
+      ["التميز عن المنافسين","Standing out from competitors"],
+      ["غير متأكد","Not sure"]
+    ])}
  ]},
  {title:{ar:"لماذا الآن؟",en:"Why now?"},questions:[
    {id:"s3_trigger",type:"multi",other:true,otherLabel:{ar:"سبب آخر",en:"Another reason"},
@@ -568,32 +617,42 @@ var STAGES=[
  ]}
 ];
 
-var GOLDEN={s2_desc:1,s3_trigger:1,s3_notworking:1,s3_lose:1,s4_diff:1,s4_perception:1,s5_current:1,s5_desired:1,s5_attach:1,s6_keep:1,s6_drop:1};
+var GOLDEN={s2_rebrand_trigger:1,s2_main_priority:1,s3_trigger:1,s3_notworking:1,s3_lose:1,s4_diff:1,s4_perception:1,s5_current:1,s5_desired:1,s5_attach:1,s6_keep:1,s6_drop:1};
 /* Stage-1 fields shown in the brief cover header / contact card instead of as plain rows. */
 var HEADER_IDS={s1_name:1,s1_activity:1,s1_year:1,s1_team:1};
 var CONTACT_IDS=["s1_website","s1_social","s1_email","s1_phone","s1_address"];
 var CONTACT_SET={s1_website:1,s1_social:1,s1_email:1,s1_phone:1,s1_address:1};
 
 /* ── dynamic stages (set after generation) ── */
-var DYNAMIC_COUNT=7;     // number of strategic stages we generate
+var DYNAMIC_COUNT=7;     // number of strategic stages we generate (3-9)
 var DYNAMIC_STAGES=null; // null = not generated (use static fallback);
                          // otherwise an array of length DYNAMIC_COUNT whose
                          // slots fill in progressively (null slot = still loading)
 
+/* Stage 2 — the Direction Seed.
+   Generated from Stage 1 by /api/generate?mode=direction-seed. While null we
+   render the static fallback in STAGES[1]; on a successful generation we swap
+   the dynamic stage in. Its answers become the directionSeed payload for the
+   strategic stages, so they avoid re-asking the same ground. */
+var STAGE2_DYNAMIC=null;
+var STAGE2_INFLIGHT=false;
+var STAGE2_SITE_HINT=null; // diagnostics: the homepage probe result
+
 function allStages(){
-  var base=STAGES.slice(0,2); // stages 1-2 always static
-  if(DYNAMIC_STAGES===null) return base.concat(STAGES.slice(2)); // fallback
+  var s1=STAGES[0];
+  var s2=STAGE2_DYNAMIC || STAGES[1];
+  if(DYNAMIC_STAGES===null) return [s1,s2].concat(STAGES.slice(2)); // fallback
   var rest=DYNAMIC_STAGES.map(function(s){
     return s || {title:{ar:"…",en:"…"},questions:[],_loading:true};
   });
-  return base.concat(rest);
+  return [s1,s2].concat(rest);
 }
 
 function totalStages(){return allStages().length;}
 function currentStageData(){return allStages()[state.stage-1];}
 
 /* ── state ─────────────────────────────────────────────────────── */
-var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:"",spOpen:"",adminTab:"active",submitting:false};
+var state={lang:"ar",view:"landing",stage:1,genPct:0,genTimer:null,curSub:null,loginErr:"",subs:null,errors:{},submitErr:"",spOpen:"",adminTab:"active",submitting:false,generating:false,gen2ing:false};
 var _lastFocusedStage=0;
 var answers={};
 
@@ -751,7 +810,10 @@ function ctrl(q){
     q.options.forEach(function(o,i){var sel=a3.sel.indexOf(i)>-1;html+='<div class="opt'+(sel?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(sel?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="'+i+'"><span class="box" aria-hidden="true">'+IC.check+'</span><span>'+o[L()]+'</span></div>';});
     if(q.other){var selO2=a3.sel.indexOf("other")>-1;html+='<div class="opt'+(selO2?" sel":"")+'" role="checkbox" tabindex="0" aria-checked="'+(selO2?"true":"false")+'" data-action="opt" data-q="'+id+'" data-val="other"><span class="box" aria-hidden="true">'+IC.check+'</span><span>'+otherTxt+'</span></div>';}
     html+='</div>';
-    if(q.other&&a3.sel.indexOf("other")>-1)html+='<input class="inp" data-q="'+id+'" data-field="extra" value="'+ea(a3.extra||"")+'" placeholder="'+ea(T[L()].otherPh)+'">';
+    if(q.other&&a3.sel.indexOf("other")>-1){
+      var ml=q.maxOther?' maxlength="'+q.maxOther+'"':'';
+      html+='<input class="inp" data-q="'+id+'" data-field="extra"'+ml+' value="'+ea(a3.extra||"")+'" placeholder="'+ea(T[L()].otherPh)+'">';
+    }
   }
   return html;
 }
@@ -820,12 +882,23 @@ function vStage(){
     +(state.stage>1?'<button class="ghost" data-action="prev"'+(sbusy?' disabled':'')+'>'+ni("prev")+'<span>'+T[L()].prev+'</span></button>':'<span></span>')
     +(last?submitBtn:'<button class="cta" data-action="next"><span>'+T[L()].next+'</span>'+ni("next")+'</button>')
   +'</div>';
-  return topbar("form")+'<div class="wrap">'+progress()+'<div class="card"><div class="cardbody"><div class="eyebrow" tabindex="-1" id="stage-heading"><span class="dot"></span><span>'+st.title[L()]+'</span></div>'+qs+submitErrHtml+nav+'</div></div><p class="savenote">'+T[L()].saved+'</p></div>';
+  /* Personalize the Direction Seed intro with the brand name, when available. */
+  var introHtml="";
+  if(st.intro&&st.intro[L()]){
+    var brand=typeof answers.s1_name==="string"?answers.s1_name.trim():"";
+    var introText=st.intro[L()];
+    if(brand)introText=introText.replace("علامتك","علامة "+brand).replace("your brand","your brand "+brand);
+    introHtml='<p class="stage-intro">'+esc(introText)+'</p>';
+  }
+  return topbar("form")+'<div class="wrap">'+progress()+'<div class="card"><div class="cardbody"><div class="eyebrow" tabindex="-1" id="stage-heading"><span class="dot"></span><span>'+st.title[L()]+'</span></div>'+introHtml+qs+submitErrHtml+nav+'</div></div><p class="savenote">'+T[L()].saved+'</p></div>';
 }
 
 function vGen(){
   var pct=state.genPct;
-  return topbar("form")+'<div class="wrap">'+progress()+'<div class="gen"><h2>'+T[L()].genT+'</h2><p>'+T[L()].genB+'</p><div class="gen-prog"><div class="gen-prog-fill" id="genFill" style="width:'+pct+'%"></div></div><div class="gen-pct" id="genPct">'+T[L()].genPct(pct)+'</div></div></div>';
+  var s2=state.gen2ing;
+  var t=s2?T[L()].gen2T:T[L()].genT;
+  var b=s2?T[L()].gen2B:T[L()].genB;
+  return topbar("form")+'<div class="wrap">'+progress()+'<div class="gen"><h2>'+t+'</h2><p>'+b+'</p><div class="gen-prog"><div class="gen-prog-fill" id="genFill" style="width:'+pct+'%"></div></div><div class="gen-pct" id="genPct">'+T[L()].genPct(pct)+'</div></div></div>';
 }
 
 function vThanks(){
@@ -1075,7 +1148,7 @@ function normalizeDigitsInDom(root){
 function render(){
   applyDir();
   var html;
-  if(state.generating)html=vGen();
+  if(state.generating||state.gen2ing)html=vGen();
   else if(state.view==="landing")html=vLanding();
   else if(state.view==="form")html=vStage();
   else if(state.view==="thanks")html=vThanks();
@@ -1137,6 +1210,93 @@ function mapStages(raw){
   });
 }
 
+/* Direction Seed (Stage 2) — shape the API response into the same stage form
+   the renderer expects. Stage 2 has only multi-type questions; some are
+   single-select (radio behaviour), all carry an 80-char "other" field. */
+function mapStage2(raw){
+  var st=raw&&raw.stage;if(!st)return null;
+  return {
+    title:{ar:st.title_ar||"اتجاه الريبراند",en:st.title_en||"Rebrand direction"},
+    intro:{
+      ar:"اختر الأقرب لوضع علامتك. لا نحتاج تفاصيل الآن، سنستخدم إجاباتك لبناء أسئلة أدق في المراحل التالية.",
+      en:"Pick what's closest to your brand. No detail needed yet — we'll use these to shape sharper questions next."
+    },
+    _direction_seed:true,
+    questions:(st.questions||[]).map(function(q){
+      var out={
+        id:q.id,
+        q:{ar:q.q_ar||"",en:q.q_en||q.q_ar||""},
+        type:"multi",
+        single:!!q.single,
+        required:true,
+        other:q.other!==false,
+        maxOther:80,
+        otherLabel:{ar:"غير ذلك",en:"Other"}
+      };
+      if(q.options_ar&&q.options_ar.length){
+        out.options=q.options_ar.map(function(o,i){return {ar:o,en:(q.options_en&&q.options_en[i])||o};});
+      }
+      if(q.id==="s2_rebrand_trigger"||q.id==="s2_main_priority"){out.golden=true;GOLDEN[q.id]=1;}
+      return out;
+    })
+  };
+}
+
+/* Build the structured direction-seed payload to pass to /api/generate when
+   we move on to the strategic stages. We read the answers against whichever
+   Stage 2 is live (dynamic if loaded, fallback otherwise). */
+function buildDirectionSeedPayload(){
+  var stage2=STAGE2_DYNAMIC||STAGES[1];
+  function items(id){
+    var qq=null;
+    for(var i=0;i<stage2.questions.length;i++){if(stage2.questions[i].id===id){qq=stage2.questions[i];break;}}
+    if(!qq)return [];
+    return answerItems(qq,answers[id],state.lang);
+  }
+  return {
+    rebrandTrigger: items("s2_rebrand_trigger"),
+    changeScope:    items("s2_change_scope")[0]||"",
+    perceptionShift:items("s2_perception_shift")[0]||"",
+    mainPriority:   items("s2_main_priority")[0]||""
+  };
+}
+
+/* Generate Stage 2 from the Stage 1 inputs. Triggered when the user clicks
+   Next on Stage 1. On success we cache the stage and advance; on failure we
+   silently fall through to the static fallback so the form never blocks. */
+async function startGenStage2(){
+  if(STAGE2_INFLIGHT)return;
+  STAGE2_INFLIGHT=true;state.gen2ing=true;state.genPct=0;render();
+  state.genPct=5;updateGenBar(5);
+  var bumper=setInterval(function(){if(state.genPct<88){state.genPct+=6;updateGenBar(state.genPct);}},320);
+  var brand=typeof answers.s1_name==="string"?answers.s1_name.trim():"";
+  var activity=typeof answers.s1_activity==="string"?answers.s1_activity.trim():"";
+  var foundedYear=typeof answers.s1_year==="string"?answers.s1_year.trim():"";
+  var team=answerItems(STAGES[0].questions.find?STAGES[0].questions.find(function(q){return q.id==="s1_team";}):null, answers.s1_team, state.lang).join(", ");
+  var website=typeof answers.s1_website==="string"?answers.s1_website.trim():"";
+  var address=typeof answers.s1_address==="string"?answers.s1_address.trim():"";
+  var socialItems=Array.isArray(answers.s1_social)?answers.s1_social:[];
+  var social=socialItems.map(function(s){return (s&&(s.platform||""))+" "+(s&&(s.handle||""));}).join(" | ").trim();
+  try{
+    var resp=await fetch("/api/generate",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({mode:"direction-seed",brandName:brand,activity:activity,foundedYear:foundedYear,teamSize:team,location:address,social:social,website:website,lang:L()})
+    });
+    if(!resp.ok)throw new Error("API "+resp.status);
+    var data=await resp.json();
+    STAGE2_SITE_HINT=data.siteHint||null;
+    var mapped=mapStage2(data);
+    if(mapped)STAGE2_DYNAMIC=mapped;
+  }catch(e){
+    console.warn("Direction-seed generation failed:",e.message);
+  }
+  clearInterval(bumper);updateGenBar(100);
+  setTimeout(function(){
+    STAGE2_INFLIGHT=false;state.gen2ing=false;state.stage=2;saveDraft();render();window.scrollTo(0,0);
+  },280);
+}
+
 function updateGenBar(pct){
   var fill=document.getElementById("genFill");
   var pctEl=document.getElementById("genPct");
@@ -1171,14 +1331,14 @@ function ensureStage(i){
 async function genBatch(indices){
   var brandName=typeof answers.s1_name==="string"?answers.s1_name.trim():"";
   var activity=typeof answers.s1_activity==="string"?answers.s1_activity.trim():"";
-  var description=typeof answers.s2_desc==="string"?answers.s2_desc.trim():"";
+  var directionSeed=buildDirectionSeedPayload();
   var filled=[];
   indices.forEach(function(i){inflight[i]=true;});
   try{
     var resp=await fetch("/api/generate",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({brandName:brandName,activity:activity,description:description,lang:L(),only:indices})
+      body:JSON.stringify({mode:"strategic",brandName:brandName,activity:activity,directionSeed:directionSeed,lang:L(),only:indices})
     });
     if(!resp.ok) throw new Error("API "+resp.status);
     var mapped=mapStages(await resp.json());
@@ -1223,7 +1383,7 @@ function startGen(){
 function toggleOpt(qid,raw){
   var q=findQ(qid),a=ans(qid);
   var val=raw==="other"?"other":parseInt(raw,10);
-  if(q.type==="scale"){a.sel=(a.sel[0]===val)?[]:[val];}
+  if(q.type==="scale"||q.single){a.sel=(a.sel[0]===val)?[]:[val];}
   else{var idx=a.sel.indexOf(val);if(idx>-1)a.sel.splice(idx,1);else{if(q.limit&&a.sel.length>=q.limit[1])return;a.sel.push(val);}}
   saveDraft();render();
 }
@@ -1276,10 +1436,27 @@ app.addEventListener("click",function(e){
   if(state.spOpen&&!e.target.closest(".sp-psw")){state.spOpen="";if(!t){render();return;}}
   if(!t)return;
   var act=t.getAttribute("data-action");
-  if(act==="lang"){state.lang=t.getAttribute("data-lang");answers={};state.stage=1;state.view="form";clearDraft();render();window.scrollTo(0,0);}
+  if(act==="lang"){state.lang=t.getAttribute("data-lang");answers={};state.stage=1;state.view="form";clearDraft();STAGE2_DYNAMIC=null;DYNAMIC_STAGES=null;render();window.scrollTo(0,0);}
   else if(act==="resume"){loadDraft();state.view="form";render();window.scrollTo(0,0);}
-  else if(act==="fresh"){clearDraft();answers={};state.stage=1;render();}
-  else if(act==="next"){var errs=validate();if(Object.keys(errs).length){state.errors=errs;render();return;}state.errors={};if(state.stage===2){startGen();}else{state.stage++;saveDraft();render();window.scrollTo(0,0);}}
+  else if(act==="fresh"){clearDraft();answers={};state.stage=1;STAGE2_DYNAMIC=null;DYNAMIC_STAGES=null;render();}
+  else if(act==="next"){
+    var errs=validate();
+    if(Object.keys(errs).length){state.errors=errs;render();return;}
+    state.errors={};
+    if(state.stage===1){
+      /* Leaving Stage 1 → generate Stage 2 (Direction Seed) from Stage 1
+         inputs. On success we land on the AI-generated chip questions; on
+         failure the static fallback in STAGES[1] is already in place. */
+      if(STAGE2_DYNAMIC){state.stage=2;saveDraft();render();window.scrollTo(0,0);}
+      else{startGenStage2();}
+    } else if(state.stage===2){
+      /* Leaving Stage 2 → kick off the strategic generation, carrying the
+         direction-seed answers as additional context. */
+      startGen();
+    } else {
+      state.stage++;saveDraft();render();window.scrollTo(0,0);
+    }
+  }
   else if(act==="prev"){state.errors={};state.submitErr="";state.stage--;render();window.scrollTo(0,0);}
   else if(act==="opt"){toggleOpt(t.getAttribute("data-q"),t.getAttribute("data-val"));}
   else if(act==="sugg"){var qi=t.getAttribute("data-q"),vi=parseInt(t.getAttribute("data-val"),10);var as=ans(qi);var ix=as.sel.indexOf(vi);if(ix>-1)as.sel.splice(ix,1);else as.sel.push(vi);saveDraft();render();}
@@ -1311,7 +1488,7 @@ app.addEventListener("click",function(e){
     render();window.scrollTo(0,0);
   }
   else if(act==="goForm"){state.view="landing";render();window.scrollTo(0,0);}
-  else if(act==="goLanding"){clearInterval(state.genTimer);state.generating=false;state.view="landing";render();window.scrollTo(0,0);}
+  else if(act==="goLanding"){clearInterval(state.genTimer);state.generating=false;state.gen2ing=false;state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="viewSub"){state.curSub=t.getAttribute("data-id");state.view="adminDetail";render();window.scrollTo(0,0);}
   else if(act==="backList"){state.view="admin";state.subs=null;fetchSubs();render();window.scrollTo(0,0);}
   else if(act==="dlWord"){downloadWord(state.curSub);}
@@ -1319,7 +1496,7 @@ app.addEventListener("click",function(e){
   else if(act==="adminTab"){state.adminTab=t.getAttribute("data-tab");render();}
   else if(act==="archiveSub"){setSubStatus(t.getAttribute("data-id"),"archived");}
   else if(act==="restoreSub"){setSubStatus(t.getAttribute("data-id"),"reviewed");}
-  else if(act==="restart"){clearDraft();answers={};state.stage=1;state.view="landing";render();window.scrollTo(0,0);}
+  else if(act==="restart"){clearDraft();answers={};state.stage=1;STAGE2_DYNAMIC=null;DYNAMIC_STAGES=null;state.view="landing";render();window.scrollTo(0,0);}
   else if(act==="doLogin"){
     var u=document.getElementById("lu"),p2=document.getElementById("lp");
     if(u&&p2&&u.value===ADMIN_USER&&p2.value===ADMIN_PASS){setAuth(true);state.view="admin";state.loginErr="";state.subs=null;fetchSubs();render();window.scrollTo(0,0);}
@@ -1367,7 +1544,10 @@ function seed(){
   if(getSubs().length)return;
   setSubs([{id:"sample1",brand:"مطعم زيتون",lang:"ar",date:new Date(Date.now()-86400000).toISOString(),status:"new",answers:{
     s1_name:"مطعم زيتون",s1_activity:"خدمات استشارية متخصصة — الرياض",s1_year:"2016",s1_team:{sel:[1],extra:""},s1_website:"zaytoon.sa",s1_social:[{platform:"instagram",handle:"instagram.com/zaytoon"},{platform:"x",handle:"x.com/zaytoon"}],s1_email:"hello@zaytoon.sa",s1_phone:[{code:"+966",num:"500000000"}],s1_address:"حي الشاطئ، جدة",
-    s2_desc:"بدأنا كمطعم عائلي بسيط وكبرنا لثلاثة فروع. نفخر بأصالة الأكل، لكن شكلنا لم يتطوّر معنا.",
+    s2_rebrand_trigger:{sel:[0,1],extra:""},
+    s2_change_scope:{sel:[1],extra:""},
+    s2_perception_shift:{sel:[0],extra:""},
+    s2_main_priority:{sel:[2],extra:""},
     s3_trigger:{sel:[0,1,"other"],extra:"المطاعم الجديدة حولنا أكثر عصرية ونخشى أن نبدو قدامى."},
     s3_notworking:{sel:[0,5],extra:""},s3_lose:"نخسر الجيل الأصغر الذي يحكم بالمظهر أولًا.",s3_success:{sel:[0,1,4],extra:""},
     s4_age:{sel:[2,3],extra:""},s4_gender:{sel:[2],extra:""},s4_income:{sel:[1,2],extra:""},
