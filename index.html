@@ -538,8 +538,8 @@ var STAGES=[
  {title:{ar:"لماذا الآن؟",en:"Why now?"},questions:[
    {id:"s3_trigger",type:"multi",other:true,otherLabel:{ar:"سبب آخر",en:"Another reason"},
     q:{ar:"ما الذي دفعك إلى تطوير هوية علامتك التجارية الآن؟",en:"What made now the right time to rebrand?"},
-    help:{ex:{ar:"مطعم مضى على افتتاحه 8 سنوات يشعر أن مظهره قديم أمام المنافسين الجدد.",
-              en:"A restaurant open 8 years that feels dated next to newer competitors."},
+    help:{ex:{ar:"مثال: مطعم مضى على افتتاحه 8 سنوات يشعر أن مظهره قديم أمام المنافسين الجدد.",
+              en:"Example: A restaurant open 8 years that feels dated next to newer competitors."},
           why:{ar:"الدافع الحقيقي وراء القرار يوجّه كل ما يلي.",en:"The real driver guides everything that follows."}},
     options:O([["أصبح مظهرنا الحالي قديمًا أو غير مواكب","Our look has become dated"],["تطوّرنا وكبرنا، ولم تعد الهوية تعبّر عنّا","We've grown and the brand no longer fits"],["ندخل سوقًا جديدة أو فئة عملاء جديدة","Entering a new market or audience"],["حدث اندماج أو تغيير في الملكية أو الإدارة","A merger or ownership/leadership change"],["هويتنا غير ثابتة أو غير متّسقة عبر القنوات","Our identity is inconsistent across channels"],["نرغب في تحسين صورتنا أو سمعتنا","We want to improve our image or reputation"]])},
    {id:"s3_notworking",type:"multi",other:true,otherLabel:{ar:"شيء آخر",en:"Something else"},
@@ -845,8 +845,20 @@ function ctrl(q){
 function qmark(q){return '<button class="qmark" data-action="help" data-q="'+q.id+'" aria-label="توضيح">'+(L()==="ar"?"؟":"?")+'</button>';}
 function helpPanel(q){
   var inner="";
-  if(q.help.ex)inner+='<p><b>'+T[L()].eg+' </b>'+q.help.ex[L()]+'</p>';
-  inner+='<p>'+q.help.why[L()]+'</p>';
+  if(q.help.ex){
+    /* Render the example text as-is and only bold the opener label
+       (e.g. "مثال:", "توضيح:", "ملاحظة:", "Example:") when one is present.
+       We used to hard-code "مثال:" here, which collided with AI-generated
+       text that already opened with its own label and produced "مثال: مثال:".
+       Defensive: if the same opener appears twice (legacy drafts or stale
+       generations), collapse the duplicate before parsing. */
+    var ex=String(q.help.ex[L()]||"").trim();
+    ex=ex.replace(/^([^\s:：]{1,16}[:：])\s+\1(?=\s)/,"$1");
+    var m=ex.match(/^([^\s:：]{1,16}[:：])\s*([\s\S]+)$/);
+    var exHtml=m?'<b>'+esc(m[1])+'</b> '+esc(m[2]):esc(ex);
+    inner+='<p>'+exHtml+'</p>';
+  }
+  inner+='<p>'+esc(q.help.why[L()])+'</p>';
   return '<div class="help collapsible closed" id="help-'+q.id+'"><div class="help-inner">'+inner+'</div></div>';
 }
 
